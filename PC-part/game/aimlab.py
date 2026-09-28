@@ -74,6 +74,25 @@ class MouseInput:
         pass
 
 
+class _FrameCountingQueue(queue.Queue):
+    """Queue that knows how many camera frames are waiting (cheap 'is a newer frame queued?' check)."""
+
+    def __init__(self):
+        super().__init__()
+        self.frames = 0
+
+    def put(self, item, block=True, timeout=None):
+        if item[0] == "frame":
+            self.frames += 1
+        super().put(item, block, timeout)
+
+    def get(self, block=True, timeout=None):
+        item = super().get(block, timeout)
+        if item[0] == "frame":
+            self.frames -= 1
+        return item
+
+
 class PhoneInput:
     """Receives the phone stream, runs the engine in a thread, moves a virtual cursor (1 count = 1 px)."""
     name = "phone"
@@ -110,7 +129,7 @@ class PhoneInput:
         s = lv.connect()
         self.connected = True
         self.msg = "connected: put the phone face-down (3 beeps), hands off until the long beep"
-        q: queue.Queue = queue.Queue()
+        q = _FrameCountingQueue()
         threading.Thread(target=lv.reader, args=(s, q, None), daemon=True).start()
         ratio0 = self.overrides.get("gauge_ratio")
         while True:
@@ -135,7 +154,7 @@ class PhoneInput:
                 self.eng.on_imu(ts, kind, x, y, z)
                 self.eng.poll(ts)
             elif m[0] == "frame":
-                if any(mm[0] == "frame" for mm in list(q.queue)[:400]):
+                if q.frames > 0:  # a newer frame is already waiting: skip this one
                     self._ns += 1
                     continue
                 self._nf += 1
@@ -691,7 +710,7 @@ def main():
         circle(screen, BG, cur, 2)
         pygame.display.flip()
         if a.input != "bot":
-            clock.tick(240)
+            clock.tick(120)  # leaves CPU for the phone engine thread
 
     # save session
     with open(d / "game_frames.csv", "w", newline="") as f:
