@@ -26,7 +26,11 @@ def main():
     out = subprocess.run([adb(), "shell", "ls", REMOTE], capture_output=True, text=True, env=env, check=True).stdout
     remote = sorted(n.strip() for n in out.split() if n.strip().startswith("rec_"))
     new = [n for n in remote if not (LOCAL / n / "meta.json").exists()]
-    print(f"{len(remote)} on phone, {len(new)} new")
+    # A take without meta.json on the phone was interrupted (app killed mid-recording): skip it.
+    done = subprocess.run([adb(), "shell", f"ls {REMOTE}/*/meta.json"], capture_output=True, text=True, env=env).stdout
+    incomplete = [n for n in new if f"{n}/meta.json" not in done]
+    new = [n for n in new if n not in incomplete]
+    print(f"{len(remote)} on phone, {len(new)} new" + (f", incomplete (skipped): {', '.join(incomplete)}" if incomplete else ""))
     for n in new:
         subprocess.run([adb(), "pull", f"{REMOTE}/{n}", str(LOCAL)], env=env, check=True)
     if new:
