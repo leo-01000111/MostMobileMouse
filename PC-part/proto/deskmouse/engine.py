@@ -26,7 +26,9 @@ class EngineConfig:
     clock_offset_ns: int = 2_000_000
     r_cam: tuple[float, float] = (-0.022, 0.044)  # main lens from phone centre, body frame (m), S24 spec estimate
     mount_yaw_deg: float = 0.0   # rotate output if the phone lies sideways (90 = top edge pointing left)
+    aspect: float = 1.0          # extra gain on the vertical axis (auto-tuned by the game)
     world_aligned: bool = True
+    instant_left: bool = False   # left click on the tap itself (no double-tap wait); double tap then also sends right
     # output mapping (§6.8)
     dpi: float = 800.0
     g_max: float = 2.5
@@ -130,6 +132,7 @@ class Engine:
         self.last_ref_speed = 0.0
         self.events: list[Event] = []
         self.stats = dict(frames=0, taps=0, scale_updates=0, lifts=0)
+        self.frame_log: list | None = None  # set to [] to log front-end results for replay
 
     # ------------------------------------------------------------------ IMU
     def psi_at(self, t_ns: int) -> float:
@@ -222,6 +225,14 @@ class Engine:
             self.stats["taps"] += 1
             self.suppress_from = int(t_ns - c.tap_suppress_before_ms * 1e6)
             self.suppress_until = int(t_ns + c.tap_suppress_after_ms * 1e6)
+            if c.instant_left:
+                if self.pending_tap_t is not None and t_ns - self.pending_tap_t < c.double_tap_ms * 1e6:
+                    self.events.append(Event(t_ns, "right"))
+                    self.pending_tap_t = None
+                else:
+                    self.events.append(Event(t_ns, "left"))
+                    self.pending_tap_t = t_ns
+                return
             if self.pending_tap_t is not None and t_ns - self.pending_tap_t < c.double_tap_ms * 1e6:
                 self.events.append(Event(t_ns, "right"))
                 self.pending_tap_t = None
@@ -230,6 +241,10 @@ class Engine:
 
     def poll(self, t_ns: int):
         """Fire a pending single tap once the double-tap window has passed."""
+        if self.cfg.instant_left:
+            if self.pending_tap_t is not None and t_ns - self.pending_tap_t >= self.cfg.double_tap_ms * 1e6:
+                self.pending_tap_t = None
+            return
         if self.pending_tap_t is not None and t_ns - self.pending_tap_t >= self.cfg.double_tap_ms * 1e6:
             self.events.append(Event(t_ns, "left"))
             self.pending_tap_t = None
@@ -323,27 +338,36 @@ class Engine:
         self.prev_Z = Z
         psi = -Z
         res = self.fe.process(y, t, dZ)
+        n_rhos = len(res.rhos)
+        rho15 = float(np.percentile(res.rhos, c.ceiling_percentile)) if n_rhos else 0.0
+        rho_med = float(np.median(res.rhos)) if n_rhos else 1.0
+        rec = (t, psi_prev, psi, float(res.w[0]), float(res.w[1]), res.sigma, res.valid, n_rhos, rho15, rho_med, res.n_inliers)
+        if self.frame_log is not None:
+            self.frame_log.append(rec)
+        self.on_result(*rec)
+
+    def on_result(self, t, psi_prev, psi, wx, wy, sigma, valid, n_rhos, rho15, rho_med, n_inliers=0):
+        """Everything after the front end; replayable from logged front-end results (game tuning)."""
+        c = self.cfg
         self.stats["frames"] += 1
-        if not res.valid:
+        if not valid:
             return
-        rho_med = float(np.median(res.rhos)) if len(res.rhos) else 1.0
-        self.last_flow_px = float(np.linalg.norm(res.w) * rho_med * self.fe.f)
+        w = np.array([wx, wy])
+        self.last_flow_px = float(np.linalg.norm(w) * rho_med * self.fe.f)
         # scale: ceiling gauge until the first stroke calibration
-        if len(res.rhos) >= 8:
-            p = np.percentile(res.rhos, c.ceiling_percentile)
-            if p > 0:
-                self.lam_gauge.append(1.0 / (c.ceiling_h * p))
-                self.lam_gauge = self.lam_gauge[-120:]
+        if n_rhos >= 8 and rho15 > 0:
+            self.lam_gauge.append(1.0 / (c.ceiling_h * rho15))
+            self.lam_gauge = self.lam_gauge[-120:]
         if self.lam is None and len(self.lam_gauge) >= 30:
             self.lam = 1.0 / float(np.median(self.lam_gauge))
         # lift from vision scale change
-        self.anomaly_frames = self.anomaly_frames + 1 if abs(res.sigma) > c.lift_scale_anomaly else 0
+        self.anomaly_frames = self.anomaly_frames + 1 if abs(sigma) > c.lift_scale_anomaly else 0
         if self.anomaly_frames >= 2 and not self.lifted:
             self.lifted = True
             self.stats["lifts"] += 1
             self.events.append(Event(t, "lift"))
 
-        d_rel_body = -self.Minv @ res.w
+        d_rel_body = -self.Minv @ w
         cs, sn = np.cos(psi), np.sin(psi)
         d_rel_world = np.array([cs * d_rel_body[0] - sn * d_rel_body[1], sn * d_rel_body[0] + cs * d_rel_body[1]])
         if not self.still:
@@ -367,7 +391,7 @@ class Engine:
         else:
             out = np.array([cs * ref[0] + sn * ref[1], -sn * ref[0] + cs * ref[1]])
         m = np.radians(c.mount_yaw_deg)
-        out = np.array([np.cos(m) * out[0] - np.sin(m) * out[1], np.sin(m) * out[0] + np.cos(m) * out[1]])
+        out = np.array([np.cos(m) * out[0] - np.sin(m) * out[1], (np.sin(m) * out[0] + np.cos(m) * out[1]) * c.aspect])
         s = np.clip((speed - c.v_lo) / (c.v_hi - c.v_lo), 0, 1)
         gain = 1 + (c.g_max - 1) * s * s * (3 - 2 * s)
         counts = out * c.dpi / 0.0254 * gain + self.carry

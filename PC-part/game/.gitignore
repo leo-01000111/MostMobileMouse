@@ -1,0 +1,4 @@
+sessions/
+phone_params.json
+bot_params.json
+__pycache__/

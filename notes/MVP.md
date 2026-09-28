@@ -25,3 +25,9 @@ Live link: 60 fps processed, 0 skipped, front end ~9 ms/frame.
   (use `--mount-yaw 90 / -90 / 180` otherwise).
 - Lens offset is a spec estimate, so twisting leaks some cursor motion.
 - No drag, no left/right by tap position, no Bluetooth.
+
+## Aim-lab game + auto-tuning (PC-part/game/README.md)
+Same levels with mouse (baseline) and phone; phone sessions log IMU + front-end results so the tuner can adjust
+direction, vertical gain, tap and scroll thresholds and stillness. Verified with a distorted test bot (converges in
+~3 sessions). Measured live latency: camera frame reaches the PC ~56 ms after mid-exposure (p95 68 ms), IMU ~22 ms.
+In the game, phone frames were processed at ~45 fps in a short test (vs 60 in mvp_live): the status line shows fps.

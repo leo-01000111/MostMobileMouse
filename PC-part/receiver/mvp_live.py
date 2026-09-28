@@ -144,8 +144,18 @@ def main():
     q = queue.Queue()
     threading.Thread(target=reader, args=(s, q, save), daemon=True).start()
 
-    cfg = EngineConfig(mount_yaw_deg=a.mount_yaw, dpi=a.dpi, world_aligned=not a.body_aligned)
-    lam0 = json.loads(STATE.read_text()).get("lam") if STATE.exists() else None
+    # settings tuned by the aim-lab game (PC-part/game/phone_params.json), command line wins
+    tuned_file = ROOT / "game" / "phone_params.json"
+    tuned = json.loads(tuned_file.read_text()) if tuned_file.exists() else {}
+    fields = EngineConfig.__dataclass_fields__
+    kw = {k: v for k, v in tuned.items() if k in fields}
+    kw.update(dpi=a.dpi, world_aligned=not a.body_aligned)
+    if a.mount_yaw:
+        kw["mount_yaw_deg"] = a.mount_yaw
+    cfg = EngineConfig(**kw)
+    if tuned:
+        print("using tuned settings:", {k: round(v, 3) if isinstance(v, float) else v for k, v in kw.items()})
+    lam0 = json.loads(STATE.read_text()).get("lam") if STATE.exists() else tuned.get("lam")
     eng = None
     n_frames = n_skipped = 0
     t_last = time.time()
