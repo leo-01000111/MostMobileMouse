@@ -34,4 +34,4 @@ The plaster texture is real and CLAHE brings it out strongly. Ultra-wide at 640 
 
 Caveats: stock camera, unknown EIS, 30 fps with long exposure. Numbers are indicative; the recorder data in Tier 1 is what counts.
 
-Still to note for this place: ceiling height above the desk, desk surface.
+Place facts: ceiling **1.90 m** above the desk; desk covered by a **very large mouse pad** (soft surface: taps will be damped, sliding friction is cloth-like); the overhead wooden panel is a **shelf above the desk** (a near plane at a few tens of cm, partly in view).

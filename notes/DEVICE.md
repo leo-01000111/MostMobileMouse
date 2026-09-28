@@ -45,4 +45,4 @@ Notes:
 
 ## Desk and room
 Target: any ceiling, any smooth desk. Per-location notes go with the recordings (Tier 0 / variety set).
-- Place 1 (Tier 0): _to fill in_
+- Place 1 (main desk): ceiling 1.90 m above desk; large cloth mouse pad; shelf above the desk partly in view; textured white plaster ceiling with smoke detector; shelving + monitor in view.
