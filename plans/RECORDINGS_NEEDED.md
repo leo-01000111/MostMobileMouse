@@ -73,13 +73,13 @@ Because it has to work anywhere, repeat a short subset at **each other place fro
 | `taps` | 1 | ~20 taps; this is where the desk surface matters most |
 | `free` | 1 | 1 min |
 
-The recorder will have a "location" text field so each take is tagged with the place and desk surface.
+Type the place and desk surface into the recorder's **Place / desk surface** field for every take.
 
 ### 2.5 Handing them over
 
-Either:
-- plug the phone in with USB debugging on and tell me; I'll run the pull script into `recordings/`, or
-- copy the `rec_YYYYMMDD_HHMMSS_<tag>/` folders from `Android/data/<app package>/files/recordings/` into `recordings/` yourself.
+Plug the phone in (USB debugging is on) and tell me; I run `python PC-part/proto/scripts/pull_recordings.py`, which pulls only new takes and validates them.
+
+App usage (countdown, labels, stopping early): [Phone-part/recorder/README.md](../Phone-part/recorder/README.md). Stop early = press **both volume keys together**.
 
 Also write down, once (or put it in `notes/DEVICE.md`):
 - ceiling height above the desk (cm),

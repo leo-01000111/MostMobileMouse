@@ -30,6 +30,13 @@ This split replaces DESIGN.md §4's `desk-mouse/` layout (mapping in plans/PLAN.
 - Python and C++ must implement the same algorithm; parity is tested in M3.
 - Never modify files in `recordings/`; derived outputs go to `PC-part/proto/out/`.
 
+## Commands
+- Build/install recorder: `cd Phone-part && gradlew.bat :recorder:installDebug` (JAVA_HOME = Temurin 21). compileSdk 37 (Compose needs it), targetSdk 36.
+- Pull + validate recordings: `python PC-part/proto/scripts/pull_recordings.py`
+- Validate: `python PC-part/proto/scripts/validate_recording.py recordings/`
+- Tier 0 stock-camera check: `python PC-part/proto/scripts/tier0_check.py recordings/tier0/<place>`
+- In Git Bash, prefix adb commands with `MSYS_NO_PATHCONV=1` or phone paths get mangled.
+
 ## Target
 - Samsung Galaxy S24, One UI 8.5, Android 16 (API 36). Details in notes/DEVICE.md.
 - **Must work on any ceiling and any smooth desk** (user requirement, widens DESIGN.md; see notes/DECISIONS.md). Texture-poor ceilings are a main case, not an edge case.

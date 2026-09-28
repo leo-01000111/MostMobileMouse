@@ -1,0 +1,1989 @@
+{
+ "device": {
+  "manufacturer": "samsung",
+  "model": "SM-S921B",
+  "device": "e1s",
+  "soc": "s5e9945",
+  "android_release": "16",
+  "sdk_int": 36,
+  "build": "BP4A.251205.006.S921BXXSHDZH3"
+ },
+ "cameras": [
+  {
+   "id": "0",
+   "facing": 1,
+   "hardware_level": 1,
+   "capabilities": [
+    9,
+    0,
+    1,
+    5,
+    2,
+    6,
+    3,
+    10,
+    11,
+    19,
+    18,
+    20
+   ],
+   "physical_ids": [
+    "2",
+    "5",
+    "6"
+   ],
+   "timestamp_source": 1,
+   "sensor_orientation": 90,
+   "focal_lengths": [
+    5.400000095367432
+   ],
+   "min_focus_distance": 10,
+   "focus_distance_calibration": 2,
+   "af_modes": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "ois_modes": [
+    0,
+    1
+   ],
+   "video_stabilization_modes": [
+    0,
+    1,
+    2
+   ],
+   "ae_fps_ranges": [
+    "15-15",
+    "15-20",
+    "20-20",
+    "24-24",
+    "15-30",
+    "30-30",
+    "15-60",
+    "60-60"
+   ],
+   "zoom_ratio_range": [
+    0.6000000238418579,
+    10
+   ],
+   "intrinsics": [
+    2728.518798828125,
+    2724.997802734375,
+    2035.5543212890625,
+    1514.463134765625,
+    0
+   ],
+   "distortion": [
+    0.09450123459100723,
+    -0.135262593626976,
+    0.058813631534576416,
+    0,
+    0
+   ],
+   "pose_translation": [
+    0,
+    0,
+    0
+   ],
+   "pose_rotation": [
+    0.707099974155426,
+    -0.707099974155426,
+    0,
+    0
+   ],
+   "pose_reference": 0,
+   "active_array": "0 0 4080 3060",
+   "pre_correction_active_array": "0 0 4080 3060",
+   "pixel_array": "4080x3060",
+   "physical_size_mm": [
+    8.15999984741211,
+    6.119999885559082
+   ],
+   "exposure_range_ns": [
+    85000,
+    100000000
+   ],
+   "iso_range": [
+    25,
+    3200
+   ],
+   "max_frame_duration_ns": 142857142,
+   "yuv_sizes": [
+    {
+     "size": "4080x3060",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x3000",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x2252",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2992x2992",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3840x2160",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x1848",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2560x1440",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1440",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "2336x1080",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1920x886",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1440x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1232x1008",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1088x1088",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1280x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "960x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "720x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x360",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "352x288",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "320x240",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "256x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "176x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "facing": 1,
+   "hardware_level": 0,
+   "capabilities": [
+    9,
+    0,
+    1,
+    5,
+    6,
+    4,
+    3,
+    19,
+    18,
+    20
+   ],
+   "physical_ids": [],
+   "timestamp_source": 1,
+   "sensor_orientation": 90,
+   "focal_lengths": [
+    2.200000047683716
+   ],
+   "min_focus_distance": 0,
+   "focus_distance_calibration": 0,
+   "af_modes": [
+    0
+   ],
+   "ois_modes": [
+    0
+   ],
+   "video_stabilization_modes": [
+    0,
+    1,
+    2
+   ],
+   "ae_fps_ranges": [
+    "15-15",
+    "15-20",
+    "20-20",
+    "24-24",
+    "15-30",
+    "30-30",
+    "15-60",
+    "60-60"
+   ],
+   "zoom_ratio_range": [
+    1,
+    8
+   ],
+   "intrinsics": [
+    1615.2789306640625,
+    1612.7005615234375,
+    1975.8294677734375,
+    1493.640380859375,
+    0
+   ],
+   "distortion": [
+    0.0014848322607576847,
+    0.01973140612244606,
+    -0.014259453862905502,
+    0,
+    0
+   ],
+   "pose_translation": [
+    0,
+    0.01590874418616295,
+    0
+   ],
+   "pose_rotation": [
+    0.7071406245231628,
+    -0.7070546746253967,
+    -0.001760446815751493,
+    -0.0018573700217530131
+   ],
+   "pose_reference": 0,
+   "active_array": "0 0 4000 3000",
+   "pre_correction_active_array": "0 0 4000 3000",
+   "pixel_array": "4000x3000",
+   "physical_size_mm": [
+    5.599999904632568,
+    4.199999809265137
+   ],
+   "exposure_range_ns": [
+    60000,
+    100000000
+   ],
+   "iso_range": [
+    48,
+    3200
+   ],
+   "max_frame_duration_ns": 142857142,
+   "yuv_sizes": [
+    {
+     "size": "4000x3000",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x2252",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2992x2992",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3840x2160",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x1848",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2560x1440",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1440",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "2336x1080",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1920x886",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1440x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1232x1008",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1088x1088",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1280x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "960x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "720x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x360",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "352x288",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "320x240",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "256x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "176x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    }
+   ],
+   "physical_of": "0"
+  },
+  {
+   "id": "5",
+   "facing": 1,
+   "hardware_level": 1,
+   "capabilities": [
+    9,
+    0,
+    1,
+    5,
+    2,
+    6,
+    4,
+    3,
+    10,
+    19,
+    18,
+    20
+   ],
+   "physical_ids": [],
+   "timestamp_source": 1,
+   "sensor_orientation": 90,
+   "focal_lengths": [
+    5.400000095367432
+   ],
+   "min_focus_distance": 10,
+   "focus_distance_calibration": 2,
+   "af_modes": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "ois_modes": [
+    0,
+    1
+   ],
+   "video_stabilization_modes": [
+    0,
+    1,
+    2
+   ],
+   "ae_fps_ranges": [
+    "15-15",
+    "15-20",
+    "20-20",
+    "24-24",
+    "15-30",
+    "30-30",
+    "15-60",
+    "60-60"
+   ],
+   "zoom_ratio_range": [
+    1,
+    8
+   ],
+   "intrinsics": [
+    2728.518798828125,
+    2724.997802734375,
+    2035.5543212890625,
+    1514.463134765625,
+    0
+   ],
+   "distortion": [
+    0.09450123459100723,
+    -0.135262593626976,
+    0.058813631534576416,
+    0,
+    0
+   ],
+   "pose_translation": [
+    0,
+    0,
+    0
+   ],
+   "pose_rotation": [
+    0.707099974155426,
+    -0.707099974155426,
+    0,
+    0
+   ],
+   "pose_reference": 0,
+   "active_array": "0 0 4080 3060",
+   "pre_correction_active_array": "0 0 4080 3060",
+   "pixel_array": "4080x3060",
+   "physical_size_mm": [
+    8.15999984741211,
+    6.119999885559082
+   ],
+   "exposure_range_ns": [
+    85000,
+    100000000
+   ],
+   "iso_range": [
+    25,
+    3200
+   ],
+   "max_frame_duration_ns": 142857142,
+   "yuv_sizes": [
+    {
+     "size": "4080x3060",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x3000",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x2252",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2992x2992",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3840x2160",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x1848",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2560x1440",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1440",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "2336x1080",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1920x886",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1440x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1232x1008",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1088x1088",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1280x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "960x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "720x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x360",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "352x288",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "320x240",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "256x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "176x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    }
+   ],
+   "physical_of": "0"
+  },
+  {
+   "id": "6",
+   "facing": 1,
+   "hardware_level": 1,
+   "capabilities": [
+    9,
+    0,
+    1,
+    5,
+    2,
+    6,
+    3,
+    19,
+    18,
+    20
+   ],
+   "physical_ids": [],
+   "timestamp_source": 1,
+   "sensor_orientation": 90,
+   "focal_lengths": [
+    7
+   ],
+   "min_focus_distance": 2,
+   "focus_distance_calibration": 2,
+   "af_modes": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "ois_modes": [
+    0,
+    1
+   ],
+   "video_stabilization_modes": [
+    0,
+    1,
+    2
+   ],
+   "ae_fps_ranges": [
+    "15-15",
+    "15-20",
+    "20-20",
+    "24-24",
+    "15-30",
+    "30-30",
+    "15-60",
+    "60-60"
+   ],
+   "zoom_ratio_range": [
+    1,
+    8
+   ],
+   "intrinsics": [
+    6705.69287109375,
+    6693.4814453125,
+    1805.44287109375,
+    1380.0257568359375,
+    0
+   ],
+   "distortion": [
+    -0.37916818261146545,
+    6.5871381759643555,
+    -33.07374954223633,
+    0,
+    0
+   ],
+   "pose_translation": [
+    -0,
+    -0.016298362985253334,
+    -0
+   ],
+   "pose_rotation": [
+    0.7084327340126038,
+    -0.7057408690452576,
+    0.002923043444752693,
+    -0.005002465099096298
+   ],
+   "pose_reference": 0,
+   "active_array": "0 0 3648 2736",
+   "pre_correction_active_array": "0 0 3648 2736",
+   "pixel_array": "3648x2736",
+   "physical_size_mm": [
+    3.6480000019073486,
+    2.7360000610351562
+   ],
+   "exposure_range_ns": [
+    48700,
+    100000000
+   ],
+   "iso_range": [
+    25,
+    3200
+   ],
+   "max_frame_duration_ns": 142857142,
+   "yuv_sizes": [
+    {
+     "size": "3648x2736",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3648x2052",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2736x2736",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3648x1684",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2560x1440",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1440",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "2336x1080",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1920x886",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1440x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1232x1008",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1088x1088",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1280x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "960x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "720x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x360",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "352x288",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "320x240",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "256x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "176x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    }
+   ],
+   "physical_of": "0"
+  },
+  {
+   "id": "1",
+   "facing": 0,
+   "hardware_level": 1,
+   "capabilities": [
+    9,
+    0,
+    1,
+    5,
+    2,
+    6,
+    3,
+    19,
+    18,
+    20
+   ],
+   "physical_ids": [],
+   "timestamp_source": 1,
+   "sensor_orientation": 270,
+   "focal_lengths": [
+    3.299999952316284
+   ],
+   "min_focus_distance": 5,
+   "focus_distance_calibration": 2,
+   "af_modes": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "ois_modes": [
+    0
+   ],
+   "video_stabilization_modes": [
+    0
+   ],
+   "ae_fps_ranges": [
+    "15-15",
+    "15-20",
+    "20-20",
+    "24-24",
+    "15-30",
+    "30-30",
+    "15-60",
+    "60-60"
+   ],
+   "zoom_ratio_range": [
+    1,
+    8
+   ],
+   "intrinsics": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "distortion": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "pose_translation": [
+    0,
+    0,
+    0
+   ],
+   "pose_rotation": [
+    0.5,
+    0.5,
+    0.5,
+    0.5
+   ],
+   "pose_reference": 0,
+   "active_array": "0 0 4000 3000",
+   "pre_correction_active_array": "0 0 4000 3000",
+   "pixel_array": "4000x3000",
+   "physical_size_mm": [
+    4.480000019073486,
+    3.359999895095825
+   ],
+   "exposure_range_ns": [
+    57000,
+    100000000
+   ],
+   "iso_range": [
+    25,
+    3200
+   ],
+   "max_frame_duration_ns": 142857142,
+   "yuv_sizes": [
+    {
+     "size": "4000x3000",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x2252",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2992x2992",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3840x2160",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x1848",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2560x1440",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1440",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "2336x1080",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1920x886",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1440x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1232x1008",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1088x1088",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1280x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "960x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "720x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x360",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "352x288",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "320x240",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "256x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "176x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    }
+   ]
+  },
+  {
+   "id": "2",
+   "facing": 1,
+   "hardware_level": 0,
+   "capabilities": [
+    9,
+    0,
+    1,
+    5,
+    6,
+    4,
+    3,
+    19,
+    18,
+    20
+   ],
+   "physical_ids": [],
+   "timestamp_source": 1,
+   "sensor_orientation": 90,
+   "focal_lengths": [
+    2.200000047683716
+   ],
+   "min_focus_distance": 0,
+   "focus_distance_calibration": 0,
+   "af_modes": [
+    0
+   ],
+   "ois_modes": [
+    0
+   ],
+   "video_stabilization_modes": [
+    0,
+    1,
+    2
+   ],
+   "ae_fps_ranges": [
+    "15-15",
+    "15-20",
+    "20-20",
+    "24-24",
+    "15-30",
+    "30-30",
+    "15-60",
+    "60-60"
+   ],
+   "zoom_ratio_range": [
+    1,
+    8
+   ],
+   "intrinsics": [
+    1615.2789306640625,
+    1612.7005615234375,
+    1975.8294677734375,
+    1493.640380859375,
+    0
+   ],
+   "distortion": [
+    0.0014848322607576847,
+    0.01973140612244606,
+    -0.014259453862905502,
+    0,
+    0
+   ],
+   "pose_translation": [
+    0,
+    0.01590874418616295,
+    0
+   ],
+   "pose_rotation": [
+    0.7071406245231628,
+    -0.7070546746253967,
+    -0.001760446815751493,
+    -0.0018573700217530131
+   ],
+   "pose_reference": 0,
+   "active_array": "0 0 4000 3000",
+   "pre_correction_active_array": "0 0 4000 3000",
+   "pixel_array": "4000x3000",
+   "physical_size_mm": [
+    5.599999904632568,
+    4.199999809265137
+   ],
+   "exposure_range_ns": [
+    60000,
+    100000000
+   ],
+   "iso_range": [
+    48,
+    3200
+   ],
+   "max_frame_duration_ns": 142857142,
+   "yuv_sizes": [
+    {
+     "size": "4000x3000",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x2252",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2992x2992",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3840x2160",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "4000x1848",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2560x1440",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1440",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "2336x1080",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1920x886",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1440x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1232x1008",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1088x1088",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1280x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "960x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "720x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x360",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "352x288",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "320x240",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "256x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "176x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "facing": 0,
+   "hardware_level": 1,
+   "capabilities": [
+    9,
+    0,
+    1,
+    5,
+    2,
+    6,
+    3,
+    19,
+    18,
+    20
+   ],
+   "physical_ids": [],
+   "timestamp_source": 1,
+   "sensor_orientation": 270,
+   "focal_lengths": [
+    3.299999952316284
+   ],
+   "min_focus_distance": 5,
+   "focus_distance_calibration": 2,
+   "af_modes": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "ois_modes": [
+    0
+   ],
+   "video_stabilization_modes": [
+    0
+   ],
+   "ae_fps_ranges": [
+    "15-15",
+    "15-20",
+    "20-20",
+    "24-24",
+    "15-30",
+    "30-30",
+    "15-60",
+    "60-60"
+   ],
+   "zoom_ratio_range": [
+    1,
+    8
+   ],
+   "intrinsics": [
+    1,
+    1,
+    1,
+    1,
+    1
+   ],
+   "distortion": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "pose_translation": [
+    0,
+    0,
+    0
+   ],
+   "pose_rotation": [
+    0.5,
+    0.5,
+    0.5,
+    0.5
+   ],
+   "pose_reference": 0,
+   "active_array": "0 0 3392 2544",
+   "pre_correction_active_array": "0 0 3392 2544",
+   "pixel_array": "3392x2544",
+   "physical_size_mm": [
+    3.7990400791168213,
+    2.8492801189422607
+   ],
+   "exposure_range_ns": [
+    57000,
+    100000000
+   ],
+   "iso_range": [
+    25,
+    3200
+   ],
+   "max_frame_duration_ns": 142857142,
+   "yuv_sizes": [
+    {
+     "size": "3392x2544",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3392x1908",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2544x2544",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "3392x1564",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "2560x1440",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1440",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "2336x1080",
+     "min_frame_duration_ns": 33331760,
+     "max_fps": 30.001416066838356
+    },
+    {
+     "size": "1920x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1920x886",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1440x1080",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1232x1008",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1088x1088",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "1280x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "960x720",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "720x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x480",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "640x360",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "352x288",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "320x240",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "256x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    },
+    {
+     "size": "176x144",
+     "min_frame_duration_ns": 16665880,
+     "max_fps": 60.00283213367671
+    }
+   ]
+  }
+ ],
+ "sensors": [
+  {
+   "name": "LSM6DSVTR Accelerometer",
+   "vendor": "STM",
+   "type": 1,
+   "string_type": "android.sensor.accelerometer",
+   "min_delay_us": 2000,
+   "max_delay_us": 160000,
+   "resolution": 0.004788403399288654,
+   "max_range": 156.90640258789062,
+   "fifo_max": 3000,
+   "wakeup": false
+  },
+  {
+   "name": "AK09918C Magnetometer",
+   "vendor": "Asahi Kasei Microdevices",
+   "type": 2,
+   "string_type": "android.sensor.magnetic_field",
+   "min_delay_us": 8000,
+   "max_delay_us": 320000,
+   "resolution": 0.05999999865889549,
+   "max_range": 4900.02001953125,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "LSM6DSVTR Gyroscope",
+   "vendor": "STM",
+   "type": 4,
+   "string_type": "android.sensor.gyroscope",
+   "min_delay_us": 2000,
+   "max_delay_us": 160000,
+   "resolution": 0.0012217304902151227,
+   "max_range": 34.906063079833984,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "STK33F11 Light",
+   "vendor": "Sitronix",
+   "type": 5,
+   "string_type": "android.sensor.light",
+   "min_delay_us": 200000,
+   "max_delay_us": 200000,
+   "resolution": 1,
+   "max_range": 60000,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "LPS22DFTR Barometer",
+   "vendor": "STM",
+   "type": 6,
+   "string_type": "android.sensor.pressure",
+   "min_delay_us": 80000,
+   "max_delay_us": 1280000,
+   "resolution": 2.44140625E-4,
+   "max_range": 1260,
+   "fifo_max": 300,
+   "wakeup": false
+  },
+  {
+   "name": "STK33F11 Proximity",
+   "vendor": "Sitronix",
+   "type": 65592,
+   "string_type": "com.samsung.sensor.physical_proximity",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 8,
+   "fifo_max": 100,
+   "wakeup": true
+  },
+  {
+   "name": "Samsung Rotation Vector",
+   "vendor": "Samsung Inc.",
+   "type": 11,
+   "string_type": "android.sensor.rotation_vector",
+   "min_delay_us": 10000,
+   "max_delay_us": 160000,
+   "resolution": 5.960464477539063E-8,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "AK09918C Magnetometer Uncalibrated",
+   "vendor": "Asahi Kasei Microdevices",
+   "type": 14,
+   "string_type": "android.sensor.magnetic_field_uncalibrated",
+   "min_delay_us": 8000,
+   "max_delay_us": 320000,
+   "resolution": 0.05999999865889549,
+   "max_range": 4900.02001953125,
+   "fifo_max": 600,
+   "wakeup": false
+  },
+  {
+   "name": "Samsung Game Rotation Vector",
+   "vendor": "Samsung Inc.",
+   "type": 15,
+   "string_type": "android.sensor.game_rotation_vector",
+   "min_delay_us": 10000,
+   "max_delay_us": 160000,
+   "resolution": 5.960464477539063E-8,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "LSM6DSVTR Gyroscope Uncalibrated",
+   "vendor": "STM",
+   "type": 16,
+   "string_type": "android.sensor.gyroscope_uncalibrated",
+   "min_delay_us": 2000,
+   "max_delay_us": 160000,
+   "resolution": 0.0012217304902151227,
+   "max_range": 34.906063079833984,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Significant Motion",
+   "vendor": "Samsung Inc.",
+   "type": 17,
+   "string_type": "android.sensor.significant_motion",
+   "min_delay_us": -1,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "Step Detector",
+   "vendor": "Samsung Inc.",
+   "type": 18,
+   "string_type": "android.sensor.step_detector",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 100,
+   "wakeup": false
+  },
+  {
+   "name": "Step Counter",
+   "vendor": "Samsung Inc.",
+   "type": 19,
+   "string_type": "android.sensor.step_counter",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 4294967296,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Tilt Detector",
+   "vendor": "Samsung Inc.",
+   "type": 22,
+   "string_type": "android.sensor.tilt_detector",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "Pick Up Gesture",
+   "vendor": "Samsung Inc.",
+   "type": 25,
+   "string_type": "android.sensor.pick_up_gesture",
+   "min_delay_us": -1,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "Device Orientataion",
+   "vendor": "Samsung Inc.",
+   "type": 27,
+   "string_type": "android.sensor.device_orientation",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 3,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Interrupt Gyroscope",
+   "vendor": "Samsung Inc.",
+   "type": 65579,
+   "string_type": "com.samsung.sensor.interrupt_gyro",
+   "min_delay_us": 20000,
+   "max_delay_us": 20000,
+   "resolution": 0.0012217304902151227,
+   "max_range": 34.906585693359375,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Scontext",
+   "vendor": "Samsung Inc.",
+   "type": 65586,
+   "string_type": "com.samsung.sensor.sensorhubs",
+   "min_delay_us": 0,
+   "max_delay_us": 20000,
+   "resolution": 0,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "STK33F11 Light CCT",
+   "vendor": "Sitronix",
+   "type": 65587,
+   "string_type": "com.samsung.sensor.light_cct",
+   "min_delay_us": 200000,
+   "max_delay_us": 200000,
+   "resolution": 1,
+   "max_range": 60000,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Call Gesture",
+   "vendor": "Samsung Inc.",
+   "type": 65594,
+   "string_type": "com.samsung.sensor.call_gesture",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "Wake Up Motion",
+   "vendor": "Samsung Inc.",
+   "type": 65590,
+   "string_type": "com.samsung.sensor.wake_up_motion",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "STK33F11 Auto Brightness Sensor",
+   "vendor": "Sitronix",
+   "type": 65601,
+   "string_type": "com.samsung.sensor.autobrightness",
+   "min_delay_us": 200000,
+   "max_delay_us": 200000,
+   "resolution": 1,
+   "max_range": 60000,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "VDIS Gyroscope",
+   "vendor": "Samsung Inc.",
+   "type": 65607,
+   "string_type": "com.samsung.sensor.vdis_gyro",
+   "min_delay_us": 8000,
+   "max_delay_us": 8000,
+   "resolution": 0.0012217304902151227,
+   "max_range": 34.906585693359375,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Flip Cover Detector",
+   "vendor": "Samsung Inc.",
+   "type": 65639,
+   "string_type": "com.samsung.sensor.flip_cover_detector",
+   "min_delay_us": 240000,
+   "max_delay_us": 240000,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "LSM6DSVTR Accelerometer Uncalibrated",
+   "vendor": "STM",
+   "type": 35,
+   "string_type": "android.sensor.accelerometer_uncalibrated",
+   "min_delay_us": 2000,
+   "max_delay_us": 160000,
+   "resolution": 0.004788403399288654,
+   "max_range": 156.90640258789062,
+   "fifo_max": 3000,
+   "wakeup": false
+  },
+  {
+   "name": "Pocket Mode",
+   "vendor": "Samsung Inc.",
+   "type": 65605,
+   "string_type": "com.samsung.sensor.pocket_mode",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Pocket Position Mode",
+   "vendor": "Samsung Inc.",
+   "type": 65698,
+   "string_type": "com.samsung.sensor.pocket_pos_mode",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Sequential Step",
+   "vendor": "Samsung Inc.",
+   "type": 65647,
+   "string_type": "com.samsung.sensor.seq_step",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 4294967296,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "STK33F11 Light IR",
+   "vendor": "Sitronix",
+   "type": 65578,
+   "string_type": "com.samsung.sensor.light_ir",
+   "min_delay_us": 200000,
+   "max_delay_us": 200000,
+   "resolution": 1,
+   "max_range": 60000,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "SuperSteady Gyroscope",
+   "vendor": "Samsung Inc.",
+   "type": 65646,
+   "string_type": "com.samsung.sensor.super_steady_gyro",
+   "min_delay_us": 8000,
+   "max_delay_us": 8000,
+   "resolution": 0.0012217304902151227,
+   "max_range": 34.906585693359375,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Device Orientataion Wake Up",
+   "vendor": "Samsung Inc.",
+   "type": 27,
+   "string_type": "android.sensor.device_orientation",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 3,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "SBM",
+   "vendor": "Samsung Inc.",
+   "type": 65643,
+   "string_type": "com.samsung.sensor.sar_backoff_motion",
+   "min_delay_us": -1,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "Light Seamless Sensor",
+   "vendor": "Samsung Inc.",
+   "type": 65614,
+   "string_type": "com.samsung.sensor.light_seamless",
+   "min_delay_us": 10000,
+   "max_delay_us": 10000,
+   "resolution": 1,
+   "max_range": 60000,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Led Cover Event Sensor",
+   "vendor": "Samsung Inc.",
+   "type": 65606,
+   "string_type": "com.samsung.sensor.led_cover_event",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "Drop Classifier",
+   "vendor": "Samsung Inc.",
+   "type": 65644,
+   "string_type": "com.samsung.sensor.drop_classifier",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 0.009999999776482582,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "Touch Proximity",
+   "vendor": "Samsung Inc.",
+   "type": 65596,
+   "string_type": "com.samsung.sensor.touch_proximity",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 9,
+   "fifo_max": 0,
+   "wakeup": true
+  },
+  {
+   "name": "Samsung Hall IC",
+   "vendor": "Samsung Inc.",
+   "type": 65600,
+   "string_type": "com.samsung.sensor.hallIC",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 1,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "STK6D2X Rear ALS",
+   "vendor": "STK",
+   "type": 65577,
+   "string_type": "com.samsung.sensor.bio_alc",
+   "min_delay_us": 10000,
+   "max_delay_us": 10000,
+   "resolution": 1,
+   "max_range": 65536,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Palm Proximity Sensor version 2",
+   "vendor": "Samsung",
+   "type": 8,
+   "string_type": "android.sensor.proximity",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 1,
+   "max_range": 5,
+   "fifo_max": 100,
+   "wakeup": true
+  },
+  {
+   "name": "Motion Sensor",
+   "vendor": "Samsung Electronics",
+   "type": 65559,
+   "string_type": "",
+   "min_delay_us": 0,
+   "max_delay_us": 0,
+   "resolution": 0,
+   "max_range": 200,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Gravity Sensor",
+   "vendor": "Samsung Electronics",
+   "type": 9,
+   "string_type": "android.sensor.gravity",
+   "min_delay_us": 10000,
+   "max_delay_us": 0,
+   "resolution": 5.960464477539063E-8,
+   "max_range": 19.613300323486328,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Linear Acceleration Sensor",
+   "vendor": "Samsung Electronics",
+   "type": 10,
+   "string_type": "android.sensor.linear_acceleration",
+   "min_delay_us": 10000,
+   "max_delay_us": 0,
+   "resolution": 0.004788403399288654,
+   "max_range": 156.90640258789062,
+   "fifo_max": 0,
+   "wakeup": false
+  },
+  {
+   "name": "Orientation Sensor",
+   "vendor": "Samsung Electronics",
+   "type": 3,
+   "string_type": "android.sensor.orientation",
+   "min_delay_us": 10000,
+   "max_delay_us": 0,
+   "resolution": 0.00390625,
+   "max_range": 360,
+   "fifo_max": 0,
+   "wakeup": false
+  }
+ ]
+}
