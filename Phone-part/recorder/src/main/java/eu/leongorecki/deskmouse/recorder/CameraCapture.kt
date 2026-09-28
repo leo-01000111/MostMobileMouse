@@ -75,6 +75,9 @@ class CameraCapture(private val cm: CameraManager) {
         private set
 
     @Volatile var lastResult: TotalCaptureResult? = null
+    /** Brightest auto-exposure result (smallest exposure·ISO) since [resetMetering]; a hand over the lens only darkens. */
+    @Volatile private var brightest: Pair<Long, Int>? = null
+    fun resetMetering() { brightest = null }
     /** Filled only while [collectMeta] is true. */
     val frameMeta = ConcurrentHashMap<Long, FrameMeta>()
     @Volatile var collectMeta = false
@@ -157,6 +160,12 @@ class CameraCapture(private val cm: CameraManager) {
         session!!.setRepeatingRequest(builder!!.build(), object : CameraCaptureSession.CaptureCallback() {
             override fun onCaptureCompleted(s: CameraCaptureSession, req: CaptureRequest, res: TotalCaptureResult) {
                 lastResult = res
+                if (exposureMode == "auto") {
+                    val e = res.get(CaptureResult.SENSOR_EXPOSURE_TIME)
+                    val iso = res.get(CaptureResult.SENSOR_SENSITIVITY)
+                    val b = brightest
+                    if (e != null && iso != null && (b == null || e.toDouble() * iso < b.first.toDouble() * b.second)) brightest = e to iso
+                }
                 if (!collectMeta) return
                 val t = res.get(CaptureResult.SENSOR_TIMESTAMP) ?: return
                 frameMeta[t] = FrameMeta(
@@ -179,8 +188,9 @@ class CameraCapture(private val cm: CameraManager) {
     fun lockExposure() {
         val res = lastResult ?: error("no capture result yet")
         val b = builder!!
-        meteredExposureNs = res.get(CaptureResult.SENSOR_EXPOSURE_TIME) ?: config.exposureNs
-        meteredIso = res.get(CaptureResult.SENSOR_SENSITIVITY) ?: 100
+        val bright = brightest
+        meteredExposureNs = bright?.first ?: res.get(CaptureResult.SENSOR_EXPOSURE_TIME) ?: config.exposureNs
+        meteredIso = bright?.second ?: res.get(CaptureResult.SENSOR_SENSITIVITY) ?: 100
         if (!manualSensor) {
             b.set(CaptureRequest.CONTROL_AE_LOCK, true)
             exposureMode = "ae_lock"

@@ -102,7 +102,8 @@ class RecorderController(
             for (i in 3 downTo 1) { remaining = i; beeper.tick(); Thread.sleep(1000) }
             phase = Phase.Metering
             cam.unlockExposure()
-            Thread.sleep(1000)
+            cam.resetMetering()
+            Thread.sleep(1500)
             cam.lockExposure()
             if (!cam.awaitExposureApplied()) Log.w(TAG, "manual exposure not confirmed in results")
 
