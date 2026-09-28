@@ -55,6 +55,7 @@ class EngineConfig:
     tap_suppress_after_ms: float = 120.0
     double_tap_ms: float = 250.0
     # scroll (§6.7)
+    scroll_enabled: bool = True   # twist-to-scroll; off = twisting never freezes the cursor
     scroll_omega: float = 0.3
     scroll_enter_ms: float = 40.0
     scroll_exit_omega: float = 0.1
@@ -251,6 +252,9 @@ class Engine:
 
     def _scroll_update(self, t_ns, wz):
         c = self.cfg
+        if not c.scroll_enabled:
+            self.scroll = False
+            return
         if not self.scroll:
             calibrated = self.stats["scale_updates"] > 0
             if self.bias_ok and abs(wz) > c.scroll_omega and (not calibrated or self.last_ref_speed < c.scroll_max_ref_speed):

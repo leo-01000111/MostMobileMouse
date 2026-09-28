@@ -625,6 +625,8 @@ def main():
     inp = (MouseInput() if a.input == "mouse" else PhoneInput(overrides) if a.input == "phone"
            else BotInput(a.bot_rot, a.bot_aspect))
     levels = make_levels()
+    if a.input == "phone" and not overrides.get("scroll_enabled", True):
+        levels = [lv for lv in levels if lv.name != "Scroll"]
     if a.levels:
         keep = {int(x) for x in a.levels.split(",")}
         levels = [lv for i, lv in enumerate(levels, 1) if i in keep]

@@ -133,6 +133,7 @@ def main():
     ap.add_argument("--mount-yaw", type=float, default=0.0, help="degrees; use if cursor directions are rotated")
     ap.add_argument("--dpi", type=float, default=800.0)
     ap.add_argument("--body-aligned", action="store_true")
+    ap.add_argument("--scroll", action="store_true", help="enable twist-to-scroll even if the tuned settings turn it off")
     ap.add_argument("--save", help="write the raw stream to this file")
     a = ap.parse_args()
 
@@ -152,6 +153,8 @@ def main():
     kw.update(dpi=a.dpi, world_aligned=not a.body_aligned)
     if a.mount_yaw:
         kw["mount_yaw_deg"] = a.mount_yaw
+    if a.scroll:
+        kw["scroll_enabled"] = True
     cfg = EngineConfig(**kw)
     if tuned:
         print("using tuned settings:", {k: round(v, 3) if isinstance(v, float) else v for k, v in kw.items()})

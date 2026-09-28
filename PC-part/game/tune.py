@@ -262,10 +262,13 @@ def run(d: Path, overrides: dict | None = None, params_path: Path | None = None,
         lines.append(note)
         if v is not None:
             new["tap_thr_min"] = v
-        v, note = scroll_threshold(s, cur["scroll_omega"])
-        lines.append(note)
-        if v is not None:
-            new["scroll_omega"] = v
+        if overrides.get("scroll_enabled", True) and "Scroll" in s["levels"]:
+            v, note = scroll_threshold(s, cur["scroll_omega"])
+            lines.append(note)
+            if v is not None:
+                new["scroll_omega"] = v
+        else:
+            lines.append("scroll: off")
 
     pr = s["meta"]["results"].get("Precision")
     if pr and pr.get("hover_jitter_px") is not None:
