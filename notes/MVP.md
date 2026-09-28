@@ -48,3 +48,11 @@ bumps), scroll 0.30 → 0.51, stillness unchanged.
 | mouse | | 0.80 | 92 | 1.6 | 5/20 (old harder rhythm) |
 Round 4: no direction drift over time (−7° → −3°), first-move amplitude 0.69 (mouse 0.71). Game processed 42 fps
 (fixed: cheaper skip check, 120 Hz redraw). Camera→PC latency p50 51 ms. Next: latency compensation.
+
+### Latency compensation (2026-09-28)
+The cursor leads by velocity × 55 ms (camera velocity, refined with accelerometer samples newer than the frame),
+computed in output counts after the gain so the lead always returns exactly to zero. Offline on round 4
+(`PC-part/game/replay_session.py`), target = uncompensated path 56 ms later: RMS error 55.6 → 25.7 px, p95 108 → 53 px,
+~7 px overshoot at stops. First attempt added the lead in metres before the speed-dependent gain and drifted
+(250–450 px); fixed. Default on (`latency_comp_ms = 55`).
+Camera in use: id 0 at 1× → physical 5 = main wide 50 MP (middle lens of the three).

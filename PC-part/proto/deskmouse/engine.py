@@ -34,6 +34,11 @@ class EngineConfig:
     g_max: float = 2.5
     v_lo: float = 0.05
     v_hi: float = 0.5
+    # latency compensation: cursor leads by velocity × latency_comp_ms (0 = off)
+    latency_comp_ms: float = 55.0  # measured camera→PC delay; halves the lag error in replay (notes/MVP.md)
+    lead_use_imu: bool = True     # refine the camera velocity with accelerometer samples newer than the frame
+    lead_max_m: float = 0.03
+    lead_vel_alpha: float = 0.5   # smoothing of the camera velocity (per frame)
     # stillness (§6.4)
     still_gyro: float = 0.03
     still_acc_std: float = 0.08
@@ -136,6 +141,9 @@ class Engine:
         self.events: list[Event] = []
         self.stats = dict(frames=0, taps=0, scale_updates=0, lifts=0)
         self.frame_log: list | None = None  # set to [] to log front-end results for replay
+        self.v_ref = np.zeros(2)   # reference-point velocity (world frame, m/s) for latency compensation
+        self.lead = np.zeros(2)    # current lead added to the cursor (m)
+        self.last_frame_t = None
 
     # ------------------------------------------------------------------ IMU
     def psi_at(self, t_ns: int) -> float:
@@ -386,10 +394,16 @@ class Engine:
         lever = np.array([cs * self.r_cam[0] - sn * self.r_cam[1], sn * self.r_cam[0] + cs * self.r_cam[1]]) - \
             np.array([c0 * self.r_cam[0] - s0 * self.r_cam[1], s0 * self.r_cam[0] + c0 * self.r_cam[1]])
         ref = lens - lever
-        dt = 1 / 60
+        dt = 1 / 60 if self.last_frame_t is None else float(np.clip((t - self.last_frame_t) / 1e9, 1 / 120, 0.1))
+        self.last_frame_t = t
         speed = float(np.linalg.norm(ref) / dt)
         self.last_ref_speed = speed
-        if (self.still or self.lifted or self.scroll or self.suppress_from <= t <= self.suppress_until):
+        if self.scroll or self.suppress_from <= t <= self.suppress_until:
+            return  # lead left untouched while output is suppressed
+        if self.still or self.lifted:
+            self._emit(t, -self.lead)  # give back whatever lead is left, then nothing
+            self.lead[:] = 0
+            self.v_ref[:] = 0
             return
         # output frame
         if c.world_aligned:
@@ -400,12 +414,48 @@ class Engine:
         out = np.array([np.cos(m) * out[0] - np.sin(m) * out[1], (np.sin(m) * out[0] + np.cos(m) * out[1]) * c.aspect])
         s = np.clip((speed - c.v_lo) / (c.v_hi - c.v_lo), 0, 1)
         gain = 1 + (c.g_max - 1) * s * s * (3 - 2 * s)
-        counts = out * c.dpi / 0.0254 * gain + self.carry
+        k = c.dpi / 0.0254 * gain
+        counts = out * k
+        self._emit(t, counts + self._lead_step(t, counts / dt, psi, k))
+
+    def _to_output(self, v_world, psi):
+        """World-frame vector → output frame (body alignment, mount yaw, aspect), metres."""
+        c = self.cfg
+        cs, sn = np.cos(psi), np.sin(psi)
+        v = v_world if c.world_aligned else np.array([cs * v_world[0] + sn * v_world[1], -sn * v_world[0] + cs * v_world[1]])
+        m = np.radians(c.mount_yaw_deg)
+        return np.array([np.cos(m) * v[0] - np.sin(m) * v[1], (np.sin(m) * v[0] + np.cos(m) * v[1]) * c.aspect])
+
+    def _emit(self, t, counts):
+        counts = counts + self.carry
         n = np.trunc(counts)
         self.carry = counts - n
         if n.any():
             # +X → right, +Y (forward) → up (screen dy negative)
             self.events.append(Event(t, "move", int(n[0]), int(-n[1])))
+
+    def _lead_step(self, t, v_counts, psi, k) -> np.ndarray:
+        """Change of the latency lead, in output counts (after gain), so it always returns exactly to zero."""
+        c = self.cfg
+        if c.latency_comp_ms <= 0:
+            return np.zeros(2)
+        self.v_ref = c.lead_vel_alpha * v_counts + (1 - c.lead_vel_alpha) * self.v_ref  # counts/s
+        v = self.v_ref.copy()
+        if c.lead_use_imu and self.rest_acc is not None and self.acc_buf:
+            newer = [(bx, by) for (ts, bx, by) in self.acc_buf if ts > t]
+            if newer:
+                a_body = np.sum(np.array(newer) - self.rest_acc, axis=0) * 0.002  # Δv since the frame, m/s, body
+                cs, sn = np.cos(psi), np.sin(psi)
+                a_world = np.array([cs * a_body[0] - sn * a_body[1], sn * a_body[0] + cs * a_body[1]])
+                v = v + self._to_output(a_world, psi) * k
+        target = v * c.latency_comp_ms / 1000
+        lim = c.lead_max_m * c.dpi / 0.0254
+        nrm = np.linalg.norm(target)
+        if nrm > lim:
+            target *= lim / nrm
+        d = target - self.lead
+        self.lead = target
+        return d
 
     def gauge_ratio(self) -> float | None:
         """Calibrated scale relative to the ceiling gauge (store this between sessions)."""
