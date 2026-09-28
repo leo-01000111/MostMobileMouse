@@ -35,10 +35,15 @@ class EngineConfig:
     v_lo: float = 0.05
     v_hi: float = 0.5
     # latency compensation: cursor leads by velocity × latency_comp_ms (0 = off)
-    latency_comp_ms: float = 55.0  # measured camera→PC delay; halves the lag error in replay (notes/MVP.md)
+    latency_comp_ms: float = 0.0  # off: amplified per-frame noise into visible jitter (user test); see notes/MVP.md
     lead_use_imu: bool = True     # refine the camera velocity with accelerometer samples newer than the frame
     lead_max_m: float = 0.03
     lead_vel_alpha: float = 0.5   # smoothing of the camera velocity (per frame)
+    # smoothing: 1€ filter on the cursor position (Casiez et al. 2012): heavy when slow, light when fast
+    smooth: bool = True
+    oe_min_cutoff_hz: float = 1.0
+    oe_beta: float = 0.01          # cutoff grows by beta · speed (counts/s); chosen on replay: shake -28 %, ~10 px lag
+    oe_d_cutoff_hz: float = 1.0
     # stillness (§6.4)
     still_gyro: float = 0.03
     still_acc_std: float = 0.08
@@ -144,6 +149,11 @@ class Engine:
         self.v_ref = np.zeros(2)   # reference-point velocity (world frame, m/s) for latency compensation
         self.lead = np.zeros(2)    # current lead added to the cursor (m)
         self.last_frame_t = None
+        self.pos_raw = np.zeros(2)       # cursor position before smoothing (counts)
+        self.pos_f = np.zeros(2)         # smoothed position
+        self.pos_sent = np.zeros(2)      # integer counts already sent
+        self.speed_f = 0.0
+        self.last_emit_t = None
 
     # ------------------------------------------------------------------ IMU
     def psi_at(self, t_ns: int) -> float:
@@ -427,9 +437,21 @@ class Engine:
         return np.array([np.cos(m) * v[0] - np.sin(m) * v[1], (np.sin(m) * v[0] + np.cos(m) * v[1]) * c.aspect])
 
     def _emit(self, t, counts):
-        counts = counts + self.carry
-        n = np.trunc(counts)
-        self.carry = counts - n
+        c = self.cfg
+        self.pos_raw = self.pos_raw + counts
+        if c.smooth:
+            dt = 1 / 60 if self.last_emit_t is None else float(np.clip((t - self.last_emit_t) / 1e9, 1 / 240, 0.1))
+
+            def alpha(fc):
+                return 1.0 / (1.0 + 1.0 / (2 * np.pi * fc * dt))
+            v = float(np.linalg.norm(self.pos_raw - self.pos_f) / dt)
+            self.speed_f += alpha(c.oe_d_cutoff_hz) * (v - self.speed_f)
+            self.pos_f = self.pos_f + alpha(c.oe_min_cutoff_hz + c.oe_beta * self.speed_f) * (self.pos_raw - self.pos_f)
+        else:
+            self.pos_f = self.pos_raw.copy()
+        self.last_emit_t = t
+        n = np.trunc(self.pos_f - self.pos_sent)
+        self.pos_sent = self.pos_sent + n
         if n.any():
             # +X → right, +Y (forward) → up (screen dy negative)
             self.events.append(Event(t, "move", int(n[0]), int(-n[1])))

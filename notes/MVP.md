@@ -56,3 +56,9 @@ computed in output counts after the gain so the lead always returns exactly to z
 ~7 px overshoot at stops. First attempt added the lead in metres before the speed-dependent gain and drifted
 (250–450 px); fixed. Default on (`latency_comp_ms = 55`).
 Camera in use: id 0 at 1× → physical 5 = main wide 50 MP (middle lens of the three).
+
+### Prediction off, smoothing on (2026-09-28)
+User: with the 55 ms prediction the cursor was too jittery to play. Replay metric (RMS second difference of the
+cursor during slow moves, px/frame²): raw 4.6, prediction 19.9 (×4.4), 1€ filter 1 Hz / β 0.01: 3.3 (−28 %) for
+~10 px lag. Prediction disabled (`latency_comp_ms = 0`), 1€ smoothing on by default. The earlier "halves the lag"
+result measured tracking error only; the jitter metric should gate any future prediction.

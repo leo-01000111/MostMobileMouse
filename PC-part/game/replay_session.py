@@ -69,3 +69,29 @@ def evaluate(d: Path, latency_ms: float):
 if __name__ == "__main__":
     d = Path(sys.argv[1]) if len(sys.argv) > 1 else sorted((HERE / "sessions").glob("*_phone"))[-1]
     evaluate(d, float(sys.argv[2]) if len(sys.argv) > 2 else 56.0)
+
+
+def evaluate_smoothing(d: Path):
+    """Jitter (wobble around a 150 ms moving average during slow moves) vs lag (distance to the unsmoothed path)."""
+    raw = replay(d, {"smooth": False, "latency_comp_ms": 0.0})
+    t = raw[:, 0]
+    sp = np.linalg.norm(np.gradient(raw[:, 1:], axis=0), axis=1) * 60  # px/s
+    slow = (sp > 20) & (sp < 400)
+    moving = sp > 20
+
+    def wobble(p):
+        k = 9
+        ma = np.stack([np.convolve(p[:, i], np.ones(k) / k, mode="same") for i in (1, 2)], 1)
+        return float(np.sqrt(np.mean(np.sum((p[:, 1:] - ma) ** 2, 1)[slow])))
+
+    print(f"session {d.name}: {len(t)} frames, slow {slow.mean() * 100:.0f} %, moving {moving.mean() * 100:.0f} %")
+    print(f"{'setting':42s} {'jitter px':>9s} {'lag px (rms)':>12s} {'end diff px':>11s}")
+    cases = [("raw (no smoothing)", {"smooth": False, "latency_comp_ms": 0.0}),
+             ("raw + 55 ms prediction (the jittery one)", {"smooth": False, "latency_comp_ms": 55.0})]
+    for mc in (0.5, 1.0, 2.0):
+        for beta in (0.002, 0.004, 0.01):
+            cases.append((f"1-euro min_cutoff {mc} Hz, beta {beta}", {"oe_min_cutoff_hz": mc, "oe_beta": beta, "latency_comp_ms": 0.0}))
+    for label, ov in cases:
+        p = replay(d, ov)
+        lag = np.linalg.norm(p[:, 1:] - raw[:, 1:], axis=1)[moving]
+        print(f"{label:42s} {wobble(p):9.2f} {np.sqrt(np.mean(lag ** 2)):12.1f} {np.linalg.norm(p[-1, 1:] - raw[-1, 1:]):11.1f}")
