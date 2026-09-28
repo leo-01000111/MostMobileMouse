@@ -38,3 +38,13 @@ Rhythm 5/20 vs 0/20 (level too hard → made easier). Phone first moves cover 52
 Tuner v1 had bugs (tap threshold learned from noise, scroll from extremes, a meaningless lag number); fixed and re-tuned
 from defaults: mount_yaw −3.0°, aspect 1.13, dpi 800 → 1000, tap 0.40 (kept: rhythm taps too weak to separate from
 bumps), scroll 0.30 → 0.51, stillness unchanged.
+
+### Progress over phone rounds (aim lab)
+| Round | Change before it | Targets s | Trace % | Precision s | Rhythm |
+|---|---|---|---|---|---|
+| 1 (19:21) | defaults | 3.44 | 29 | 3.9 | 0/20 |
+| 3 (19:33) | tuned v2, scroll off | 2.98 | 21 | 4.0 | 9/16 |
+| 4 (19:44) | body-aligned output, scale carry-over fix | **1.13** | **69** | **2.7** | 11/16 |
+| mouse | | 0.80 | 92 | 1.6 | 5/20 (old harder rhythm) |
+Round 4: no direction drift over time (−7° → −3°), first-move amplitude 0.69 (mouse 0.71). Game processed 42 fps
+(fixed: cheaper skip check, 120 Hz redraw). Camera→PC latency p50 51 ms. Next: latency compensation.
