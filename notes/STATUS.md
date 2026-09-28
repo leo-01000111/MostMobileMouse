@@ -20,3 +20,4 @@
 - 2026-09-28: M0 recorder built and installed (AGP 9.4.1, Gradle 9.8, Kotlin 2.4.20, compileSdk 37). Test take: 908 frames @ 60.0 fps, 0 dropped, IMU 500 Hz, REALTIME, OIS/EIS off, manual 2 ms / ISO 1534 indoors. Python loader + validator + pull script added.
 - 2026-09-28: Tier 1 first-priority set recorded at place 1 (notes/TIER1_RESULTS.md). Camera–gyro sync verified: corr 0.9997, offset ~2 ms.
 - 2026-09-28: M1: multi-depth front end + vision-only VO + simulator. Synthetic 20 cm strokes within 0.2–1 %. Real: inliers 55–69, cross-axis <3 %, IMU-only strokes 20.7 cm ±3.3 % on ruler_y.
+- 2026-09-28: Recording session ended by user (tired). Still missing for M2: lift, free, dark, lights, raw ruler_x (plus other places later). Phone app free to reinstall now.
