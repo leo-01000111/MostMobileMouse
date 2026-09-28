@@ -39,12 +39,7 @@ class Recording:
         Camera2 intrinsics refer to the active array; the stream is that array scaled (same aspect
         assumed, as for 640x480 from 4080x3060).
         """
-        c = self.meta["camera_characteristics"]
-        fx, fy, cx, cy, _ = c["intrinsics"]
-        x0, y0, x1, y1 = (float(v) for v in str(c["active_array"]).replace(",", " ").split())
-        s = self.width / (x1 - x0)
-        K = np.array([[fx * s, 0, (cx - x0) * s], [0, fy * s, (cy - y0) * s], [0, 0, 1.0]])
-        return K, np.array(c.get("distortion") or [0, 0, 0, 0, 0], float)
+        return intrinsics_from(self.meta["camera_characteristics"], self.width)
 
     def ground_truth(self) -> pd.DataFrame | None:
         """gt.csv (synthetic recordings only): t_ns, x, y, psi, vx, vy of the reference point."""
@@ -88,6 +83,15 @@ class Recording:
         while cap.grab():
             n += 1
         return n
+
+
+def intrinsics_from(c: dict, width: int) -> tuple[np.ndarray, np.ndarray]:
+    """K and Camera2 distortion at stream width, from a camera_characteristics dict (meta.json / live hello)."""
+    fx, fy, cx, cy, _ = c["intrinsics"]
+    x0, y0, x1, y1 = (float(v) for v in str(c["active_array"]).replace(",", " ").split())
+    s = width / (x1 - x0)
+    K = np.array([[fx * s, 0, (cx - x0) * s], [0, fy * s, (cy - y0) * s], [0, 0, 1.0]])
+    return K, np.array(c.get("distortion") or [0, 0, 0, 0, 0], float)
 
 
 def load(path: str | Path) -> Recording:

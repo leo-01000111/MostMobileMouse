@@ -143,6 +143,9 @@ private fun Screen(c: RecorderController, root: File) {
                 Button({ c.record() }, enabled = c.phase == Phase.Idle && c.choice != null) { Text("Record (3 s countdown)") }
                 OutlinedButton({ c.status = "saved ${c.saveDeviceCaps().name}" }) { Text("Save device caps") }
             }
+            Button({ c.stream() }, enabled = c.phase == Phase.Idle && c.choice != null, modifier = Modifier.fillMaxWidth()) {
+                Text("Mouse mode: stream to PC (USB)")
+            }
             Text("During a take: Vol-Up / Vol-Down = labels, both together = stop. Screen goes black and ignores touches.",
                 color = Color.Gray, fontSize = 12.sp)
             if (c.lastSummary.isNotEmpty()) Text("Last: " + c.lastSummary, color = Color.White, fontSize = 13.sp)

@@ -143,15 +143,23 @@ class FrontEnd:
         if len(idx) < 3:
             return None, np.zeros(len(rho), bool)
         dflat = d.reshape(-1)
-        best, best_n = None, -1
-        for _ in range(c.ransac_iters):
-            s = self.rng.choice(idx, 2, replace=False)
-            A = self._design(rho[s], n[s], False)
-            x, *_ = np.linalg.lstsq(A, d[s].reshape(-1), rcond=None)
-            res = np.linalg.norm((self._design(rho, n, False) @ x - dflat).reshape(-1, 2), axis=1)
-            inl = (res < thr) & usable
-            if inl.sum() > best_n:
-                best, best_n = inl, inl.sum()
+        # All hypotheses at once: each from 2 tracks (4 equations, unknowns w, dpsi), batched normal equations.
+        H = c.ransac_iters
+        s = np.stack([self.rng.choice(idx, 2, replace=False) for _ in range(H)])  # (H, 2)
+        A = np.zeros((H, 4, 3))
+        A[:, 0::2, 0] = rho[s]
+        A[:, 1::2, 1] = rho[s]
+        A[:, 0::2, 2] = -n[s, 1]
+        A[:, 1::2, 2] = n[s, 0]
+        b = d[s].reshape(H, 4)
+        AtA = A.transpose(0, 2, 1) @ A + np.eye(3) * 1e-12
+        x = np.linalg.solve(AtA, (A.transpose(0, 2, 1) @ b[:, :, None]))[:, :, 0]  # (H, 3)
+        pred = rho[None, :, None] * x[:, None, :2] + x[:, None, 2:3] * (n @ J.T)[None]
+        res = np.linalg.norm(pred - d[None], axis=2)  # (H, N)
+        inl_all = (res < thr) & usable[None]
+        counts = inl_all.sum(1)
+        best_n = int(counts.max())
+        best = inl_all[int(counts.argmax())]
         if best_n < 3:
             return None, np.zeros(len(rho), bool)
         x = None

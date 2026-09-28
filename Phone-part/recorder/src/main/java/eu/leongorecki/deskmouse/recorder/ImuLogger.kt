@@ -37,6 +37,9 @@ class ImuLogger(private val sm: SensorManager) : SensorEventListener {
     val firstT = LongArray(Kind.entries.size) { -1 }
     val lastT = LongArray(Kind.entries.size) { -1 }
 
+    /** Live consumer (MVP streaming): (t_ns, kind 0 = gyro / 1 = accel, x, y, z). */
+    @Volatile var onSample: ((Long, Int, Float, Float, Float) -> Unit)? = null
+
     fun availableSensors(): Map<Kind, Sensor?> = sensors
 
     /** Start listening. If [file] is null, samples are only counted (live rate display). */
@@ -69,6 +72,13 @@ class ImuLogger(private val sm: SensorManager) : SensorEventListener {
         counts.incrementAndGet(i)
         if (firstT[i] < 0) firstT[i] = e.timestamp
         lastT[i] = e.timestamp
+        onSample?.let { cb ->
+            when (kind) {
+                Kind.GYRO -> cb(e.timestamp, 0, e.values[0], e.values[1], e.values[2])
+                Kind.ACCEL -> cb(e.timestamp, 1, e.values[0], e.values[1], e.values[2])
+                else -> {}
+            }
+        }
         val w = out ?: return
         val v = e.values
         val sb = StringBuilder(96).append(e.timestamp).append(',').append(kind.label)

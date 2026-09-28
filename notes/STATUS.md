@@ -9,7 +9,8 @@
 | M1 front end + simulator | done on synthetic (targets met); real data: tracking/direction OK, vision-only scale fragile → IMU needed (notes/M1_RESULTS.md) |
 | Tier 0 ceiling check (user) | place 1 done (notes/TIER0_RESULTS.md) |
 | Tier 1 recordings (user) | first-priority set done (still, ruler_x/y, square, square_rot, twist); remaining: lift, taps, free, dark, lights, raw |
-| M2 fusion + go/no-go | not started |
+| M2 fusion + go/no-go | skipped for now by user's choice; MVP engine (stroke-calibrated scale) instead |
+| MVP (USB stream + PC engine) | working end to end, awaiting user's hands-on test (notes/MVP.md) |
 | M3–M7 | gated on M2 GO |
 
 ## Log
@@ -21,3 +22,4 @@
 - 2026-09-28: Tier 1 first-priority set recorded at place 1 (notes/TIER1_RESULTS.md). Camera–gyro sync verified: corr 0.9997, offset ~2 ms.
 - 2026-09-28: M1: multi-depth front end + vision-only VO + simulator. Synthetic 20 cm strokes within 0.2–1 %. Real: inliers 55–69, cross-axis <3 %, IMU-only strokes 20.7 cm ±3.3 % on ruler_y.
 - 2026-09-28: Recording session ended by user (tired). Still missing for M2: lift, free, dark, lights, raw ruler_x (plus other places later). Phone app free to reinstall now.
+- 2026-09-28: MVP built: phone Mouse mode (TCP stream), PC engine + SendInput runner. Live link 60 fps, 0 skipped.

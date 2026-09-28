@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "DeskRec"
 
-enum class Phase { Idle, Countdown, Metering, Recording, Saving }
+enum class Phase { Idle, Countdown, Metering, Recording, Saving, WaitingForPc, Streaming }
 
 /** Owns camera + IMU for the activity's lifetime; drives live monitoring and recordings. */
 class RecorderController(
@@ -51,6 +51,7 @@ class RecorderController(
     var lastSummary by mutableStateOf("")
 
     @Volatile private var rec: Recording? = null
+    @Volatile private var streamer: StreamServer? = null
     @Volatile private var stopRequested = false
     private var liveFrames = 0
     private var liveT0 = 0L
@@ -131,6 +132,59 @@ class RecorderController(
         }
     }
 
+    /** MVP: stream camera + IMU to the PC until it disconnects or both volume keys are pressed. */
+    fun stream() {
+        if (phase != Phase.Idle || choice == null) return
+        stopRequested = false
+        worker.execute { runStream() }
+    }
+
+    private fun runStream() {
+        val cfg = config()
+        var s: StreamServer? = null
+        try {
+            if (!cam.isOpenWith(cfg)) cam.open(cfg)
+            s = StreamServer()
+            phase = Phase.WaitingForPc
+            status = "waiting for PC on port ${s.port} (adb forward tcp:${s.port} tcp:${s.port})"
+            if (!s.awaitClient { !stopRequested }) { s.close(); phase = Phase.Idle; status = ""; return }
+            phase = Phase.Countdown
+            for (i in 3 downTo 1) { remaining = i; beeper.tick(); Thread.sleep(1000) }
+            phase = Phase.Metering
+            cam.unlockExposure()
+            cam.resetMetering()
+            Thread.sleep(1500)
+            cam.lockExposure()
+            cam.awaitExposureApplied()
+            val hello = org.json.JSONObject()
+                .put("width", cfg.width).put("height", cfg.height).put("fps", cfg.fps)
+                .put("exposure_ns", cam.appliedExposureNs).put("iso", cam.appliedIso)
+                .put("camera_characteristics", DeviceCaps.camera(cm, cfg.choice.openId))
+                .put("device", DeviceCaps.device())
+            s.hello(hello.toString())
+            imu.onSample = { t, k, x, y, z -> s.imu(t, k, x, y, z) }
+            streamer = s
+            phase = Phase.Streaming
+            beeper.start()
+            val t0 = SystemClock.elapsedRealtime()
+            while (!stopRequested && s.connected) {
+                remaining = ((SystemClock.elapsedRealtime() - t0) / 1000).toInt()
+                status = "streaming: ${s.sentFrames.get()} frames sent, ${s.droppedFrames.get()} dropped"
+                Thread.sleep(200)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "stream failed", e); beeper.error(); status = "stream error: ${e.message}"
+        } finally {
+            streamer = null
+            imu.onSample = null
+            s?.close()
+            beeper.stop()
+            cam.unlockExposure()
+            lastSummary = "stream ended: ${s?.sentFrames?.get() ?: 0} frames sent, ${s?.droppedFrames?.get() ?: 0} dropped"
+            phase = Phase.Idle
+        }
+    }
+
     private fun finishRecording(r: Recording) {
         rec = null
         r.endNs = SystemClock.elapsedRealtimeNanos()
@@ -164,6 +218,12 @@ class RecorderController(
     fun onKey(keyCode: Int, down: Boolean, repeat: Boolean): Boolean {
         if (keyCode != KeyEvent.KEYCODE_VOLUME_UP && keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) return false
         if (phase == Phase.Idle) return false
+        if (phase == Phase.Streaming || phase == Phase.WaitingForPc) {
+            if (repeat) return true
+            if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) upDown = down else downDown = down
+            if (upDown && downDown) stopRequested = true
+            return true
+        }
         if (repeat) return true
         val up = keyCode == KeyEvent.KEYCODE_VOLUME_UP
         if (up) upDown = down else downDown = down
@@ -176,6 +236,10 @@ class RecorderController(
         val r = rec
         if (r != null) {
             if (r.sink.write(y, tNs)) r.frameTs.add(tNs) else r.droppedFrames++
+        }
+        streamer?.let { st ->
+            val skew = cam.lastResult?.get(android.hardware.camera2.CaptureResult.SENSOR_ROLLING_SHUTTER_SKEW) ?: 0L
+            st.frame(y, cam.config.width, cam.config.height, tNs, cam.appliedExposureNs.toInt(), skew.toInt())
         }
         liveFrames++
         val now = SystemClock.elapsedRealtimeNanos()

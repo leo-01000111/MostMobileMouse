@@ -17,3 +17,4 @@ Record decisions that deviate from or refine DESIGN.md, with date and reason.
 - 2026-09-28: GitHub repo https://github.com/leo-01000111/MostMobileMouse (public). Recordings and tier0 photos are gitignored (they show the user's home).
 - 2026-09-28: User allows pushing to origin/main without asking.
 - 2026-09-28: Tap threshold floor: DESIGN.md §6.6 `thr_min = 1.5 m/s²` per sample is too high for a soft mouse pad (misses ~45 % of taps). Default lowered to ~0.4 (to confirm against false taps while sliding in `free`). Keep the adaptive median+8·MAD part.
+- 2026-09-28: **User asked for an MVP from the session-1 recordings, skipping the M2 go/no-go gate.** Built as phone-streams-over-USB + Python engine on the PC (notes/MVP.md). Axis mapping from data: image = [[0,-1],[1,0]]·body XY, gyro-image rotation sign +1. The C++/on-phone path (M3–M6) is unchanged as the long-term plan.
