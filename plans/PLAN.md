@@ -122,7 +122,8 @@ Git: https://github.com/leo-01000111/MostMobileMouse (public). `recordings/` is 
 | Risk (§12) | Answered by | When |
 |------------|-------------|------|
 | Ceiling texture too weak | Tier 0 photo/video, then M1 inlier counts | Day 1 (Tier 0), B2 |
-| Samsung camera: manual exposure/focus, 60 fps, REALTIME timestamps | A0 capabilities dump | First run of recorder |
-| Bluetooth HID supported on the phone | A0 capabilities dump | First run of recorder |
+| Samsung camera: manual exposure/focus, 60 fps, REALTIME timestamps | ✅ answered via adb 2026-09-28: all yes on main and ultra-wide (notes/DEVICE.md). Still verify 60 fps at 640×480 with OIS off in M0 | done / M0 |
+| Bluetooth HID supported on the phone | ✅ HID device profile enabled (system property); confirm at runtime in M6 | done / M6 |
+| IMU rate ≥ 400 Hz | ✅ LSM6DSV, 500 Hz max | done |
 | Latency | M2 estimate, M4 measurement | B3, C2 |
 | Power / thermal | M4 measurement | C2 |

@@ -41,4 +41,4 @@ This split replaces DESIGN.md §4's `desk-mouse/` layout (mapping in plans/PLAN.
 - Git remote: https://github.com/leo-01000111/MostMobileMouse (**public**). Never commit recordings or photos of the user's rooms.
 
 ## Unknowns to fill in (see notes/DEVICE.md)
-Exact model number / SoC, Camera2 capabilities, timestamp source, HID support, ceiling heights.
+Case, lens offset, per-location ceiling notes. (Camera2, IMU and HID facts are in notes/DEVICE.md.)
