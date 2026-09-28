@@ -31,3 +31,10 @@ Same levels with mouse (baseline) and phone; phone sessions log IMU + front-end 
 direction, vertical gain, tap and scroll thresholds and stillness. Verified with a distorted test bot (converges in
 ~3 sessions). Measured live latency: camera frame reaches the PC ~56 ms after mid-exposure (p95 68 ms), IMU ~22 ms.
 In the game, phone frames were processed at ~45 fps in a short test (vs 60 in mvp_live): the status line shows fps.
+
+### First real sessions (2026-09-28)
+Mouse vs phone: Targets 0.80 vs 3.44 s/target; Trace 92 % vs 29 % inside; Precision 1.6 vs 3.9 s; Scroll 1.7 vs 5.4 s/zone;
+Rhythm 5/20 vs 0/20 (level too hard → made easier). Phone first moves cover 52 % of the distance (mouse 71 %).
+Tuner v1 had bugs (tap threshold learned from noise, scroll from extremes, a meaningless lag number); fixed and re-tuned
+from defaults: mount_yaw −3.0°, aspect 1.13, dpi 800 → 1000, tap 0.40 (kept: rhythm taps too weak to separate from
+bumps), scroll 0.30 → 0.51, stillness unchanged.

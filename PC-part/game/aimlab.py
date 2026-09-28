@@ -356,17 +356,17 @@ class ClickTargets(Level):
 
 class Rhythm(Level):
     name = "Rhythm"
-    help = "Click each circle when the shrinking ring touches it (on the beat)."
+    help = "Click (phone: tap) each circle when the shrinking ring touches it. Slow and steady."
 
-    def __init__(self, rng, n=20, interval=0.75, approach=1.0, r=45):
+    def __init__(self, rng, n=16, interval=1.1, approach=1.5, r=55):
         super().__init__(rng)
         self.r, self.approach = r, approach
         ang = 0.0
         self.notes = []
         for i in range(n):
-            ang += rng.uniform(0.9, 2.2) * rng.choice([-1, 1])
-            rad = rng.uniform(150, 330)
-            self.notes.append([1.5 + i * interval, CX + rad * math.cos(ang) * 1.5, CY + rad * math.sin(ang), None])
+            ang += rng.uniform(0.6, 1.4) * rng.choice([-1, 1])
+            rad = rng.uniform(120, 240)
+            self.notes.append([2.0 + i * interval, CX + rad * math.cos(ang) * 1.4, CY + rad * math.sin(ang), None])
         self.score = 0
         self.errors: list = []
 
@@ -381,8 +381,8 @@ class Rhythm(Level):
             n = min(cand, key=lambda n: abs(tcs - n[0]))
             inside = np.hypot(cur[0] - n[1], cur[1] - n[2]) <= self.r
             err = tcs - n[0]
-            if inside and abs(err) <= 0.15:
-                n[3] = 300 if abs(err) < 0.05 else 100 if abs(err) < 0.1 else 50
+            if inside and abs(err) <= 0.2:
+                n[3] = 300 if abs(err) < 0.07 else 100 if abs(err) < 0.14 else 50
                 self.errors.append(err)
             else:
                 n[3] = 0

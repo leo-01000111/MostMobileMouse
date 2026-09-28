@@ -160,19 +160,27 @@ def tap_threshold(s, cur: float):
         m = (t > tp - 0.25e9) & (t < tp + 0.25e9)
         if m.any():
             S.append(j[m].max())
-    span = level_span_phone(s, li_t, off)
-    m = (t > span[0] + 3.5e9) & (t < span[1])
+    # background: every level where nobody taps (Trace, Precision, Scroll)
+    m = np.zeros(len(t), bool)
+    for name in ("Trace", "Precision", "Scroll"):
+        li = level_index(s, name)
+        if li is not None:
+            span = level_span_phone(s, li, off)
+            m |= (t > span[0] + (3.5e9 if name == "Trace" else 0)) & (t < span[1])
     if not S or not m.any():
         return None, "tap: not enough data"
     S = np.array(S)
     bmax = float(j[m].max())
-    s20 = float(np.percentile(S, 20))
+    real = S[S > 3 * max(bmax, 0.05)]  # notes where a clear tap happened
+    if len(real) < 8:
+        return None, (f"tap: only {len(real)} clear taps in Rhythm (need 8), keeping threshold {cur:.2f}")
+    s20 = float(np.percentile(real, 20))
     lo, hi = bmax * 1.3, s20 * 0.7
     thr = math.sqrt(lo * hi) if lo < hi else lo
     thr = float(np.clip(thr, 0.15, 2.0))
     new = cur + DAMP * (thr - cur)
     rec = float(np.mean(S >= new))
-    note = f"tap: rhythm taps p20 {s20:.2f}, strongest non-tap jolt in Trace {bmax:.2f} -> threshold {cur:.2f} -> {new:.2f} (rhythm recall {100 * rec:.0f}%)"
+    note = f"tap: rhythm taps p20 {s20:.2f}, strongest non-tap jolt (Trace/Precision/Scroll) {bmax:.2f} -> threshold {cur:.2f} -> {new:.2f} (rhythm recall {100 * rec:.0f}%)"
     if lo >= hi:
         note += "  [overlap: favouring no false clicks]"
     return new, note
@@ -199,13 +207,13 @@ def scroll_threshold(s, cur: float):
         (sc if li == li_s else bg).append(sus[m])
     if not bg or not sc:
         return None, "scroll: need Scroll and other levels"
-    bmax = float(np.concatenate(bg).max())
+    bmax = float(np.percentile(np.concatenate(bg), 99.5))  # accidental twists (ignores rare pick-ups)
     sc = np.concatenate(sc)
-    p50 = float(np.percentile(sc[sc > 0.1], 50)) if np.any(sc > 0.1) else 0.0
+    p50 = float(np.percentile(sc, 99))  # scroll twists at full speed (most of the level is not twisting)
     lo, hi = max(0.12, bmax * 1.2), p50 * 0.6
     thr = float(np.clip((lo + hi) / 2 if lo < hi else lo, 0.12, 1.0))
     new = cur + DAMP * (thr - cur)
-    note = f"scroll: fastest accidental twist {bmax:.2f} rad/s, typical scroll twist {p50:.2f} -> threshold {cur:.2f} -> {new:.2f}"
+    note = f"scroll: accidental twists up to {bmax:.2f} rad/s (p99.5), scroll twists {p50:.2f} (p99) -> threshold {cur:.2f} -> {new:.2f}"
     if lo >= hi:
         note += "  [overlap: favouring no accidental scroll]"
     return new, note
@@ -216,7 +224,7 @@ def run(d: Path, overrides: dict | None = None, params_path: Path | None = None,
     params_path = params_path or (HERE / "bot_params.json" if d.name.endswith("_bot") else PARAMS)
     overrides = dict(overrides or (json.loads(params_path.read_text()) if params_path.exists() else {}))
     defaults = EngineConfig()
-    cur = {k: overrides.get(k, getattr(defaults, k)) for k in ("mount_yaw_deg", "aspect", "tap_thr_min", "scroll_omega", "still_flow_px")}
+    cur = {k: overrides.get(k, getattr(defaults, k)) for k in ("mount_yaw_deg", "aspect", "dpi", "tap_thr_min", "scroll_omega", "still_flow_px")}
     s = load(d)
     if d.name.endswith("_bot"):  # bot test: baseline = latest undistorted bot session
         base_dir = next((p for p in sorted(SESSIONS.glob("*_bot"), reverse=True)
@@ -230,11 +238,11 @@ def run(d: Path, overrides: dict | None = None, params_path: Path | None = None,
     G, M = ballistic_pairs(s)
     if len(G) >= 8:
         th, a, sc, res = fit_distortion(G, M)
-        th_b, a_b = 0.0, 1.0
+        th_b, a_b, sc_b = 0.0, 1.0, 1.0
         if base is not None:
             Gb, Mb = ballistic_pairs(base)
             if len(Gb) >= 8:
-                th_b, a_b, _, _ = fit_distortion(Gb, Mb)
+                th_b, a_b, sc_b, _ = fit_distortion(Gb, Mb)
         dth = th - th_b
         da = a / a_b
         new["mount_yaw_deg"] = cur["mount_yaw_deg"] - DAMP * float(np.clip(dth, -45, 45))
@@ -242,7 +250,10 @@ def run(d: Path, overrides: dict | None = None, params_path: Path | None = None,
         lines.append(f"direction: {len(G)} aiming moves; cursor rotated {dth:+.1f} deg vs intent (your mouse bias {th_b:+.1f}), "
                      f"vertical/horizontal gain {da:.2f} -> mount_yaw {cur['mount_yaw_deg']:.1f} -> {new['mount_yaw_deg']:.1f}, "
                      f"aspect {cur['aspect']:.2f} -> {new['aspect']:.2f}")
-        lines.append(f"           first-move amplitude {sc:.2f} x target distance (mouse ~1 is typical)")
+        # speed: your first move should cover as much of the distance as it does with the mouse
+        ratio = float(np.clip(sc_b / sc, 0.5, 2.5))
+        new["dpi"] = float(np.clip(cur["dpi"] * (1 + DAMP * (ratio - 1)), 200, 4000))
+        lines.append(f"speed: first move covers {sc:.2f} of the distance (mouse {sc_b:.2f}) -> dpi {cur['dpi']:.0f} -> {new['dpi']:.0f}")
     else:
         lines.append(f"direction: only {len(G)} clean aiming moves, not tuning")
 
@@ -269,10 +280,6 @@ def run(d: Path, overrides: dict | None = None, params_path: Path | None = None,
         lines.append(f"stillness: hover jitter {j:.2f} px/frame (mouse {bj if bj is not None else '-'}), "
                      f"timeouts {pr.get('timeouts')} -> still_flow_px {cur['still_flow_px']:.2f} -> {new['still_flow_px']:.2f}")
 
-    lag = trace_lag_ms(s)
-    lag_b = trace_lag_ms(base) if base else None
-    if lag is not None:
-        lines.append(f"lag (Trace): phone {lag:.0f} ms" + (f", mouse {lag_b:.0f} ms -> system adds ~{lag - lag_b:.0f} ms" if lag_b is not None else ""))
 
     out = dict(overrides)
     out.update(new)
