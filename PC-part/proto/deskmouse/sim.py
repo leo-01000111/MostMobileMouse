@@ -65,13 +65,13 @@ def scene_preset(name: str, ceiling_h: float = 1.9) -> list[Patch]:
         return [Patch(ceiling_h, seed=1, contrast=0.08)]
     near = [
         ceiling,
-        Patch(0.45, x0=-1.2, x1=-0.35, y0=-0.6, y1=0.9, seed=2, texture_scale=0.002, brightness=120),  # shelf underside
-        Patch(0.30, x0=0.25, x1=0.9, y0=0.35, y1=0.8, seed=3, texture_scale=0.0015, brightness=80),   # monitor edge
+        Patch(0.45, x0=-1.2, x1=-0.12, y0=-0.6, y1=0.9, seed=2, texture_scale=0.002, brightness=120),  # shelf underside
+        Patch(0.30, x0=0.08, x1=0.9, y0=0.08, y1=0.8, seed=3, texture_scale=0.0015, brightness=80),   # monitor edge
     ]
     if name == "multidepth":
         return near
     if name == "distractor":
-        return near + [Patch(0.55, x0=0.3, x1=0.65, y0=-0.55, y1=-0.25, seed=4, texture_scale=0.001,
+        return near + [Patch(0.55, x0=0.1, x1=0.45, y0=-0.4, y1=-0.12, seed=4, texture_scale=0.001,
                              brightness=110, motion=(0.05, 0.4, 0.3))]
     raise ValueError(name)
 
@@ -276,7 +276,7 @@ def simulate(out_dir: str | Path, tag: str, scene: str = "multidepth", speed: fl
             "sensor_orientation": 90},
         "measured": {"frames": len(frame_ts), "dropped_frames": 0},
         "sim": {"scene": scene, "speed": speed, "psi0": psi0, "seed": seed, "r_cam": list(cam.r_cam),
-                "M_ci": [[1, 0], [0, -1]], "patch_heights": [p.z for p in patches], "imu": asdict(imu)},
+                "M_ci": [[1, 0], [0, -1]], "rot_sign": -1.0, "patch_heights": [p.z for p in patches], "imu": asdict(imu)},
     }
     (d / "meta.json").write_text(json.dumps(meta, indent=1))
     return d
