@@ -12,6 +12,7 @@ Raw data in `recordings/` (gitignored). All takes 640×480 @ 60 fps, main camera
 | square | 3 × ~30 s | 3 laps each, stopped early with both volume keys; 1 take lost (app reinstalled mid-take) |
 | square_rot | 3 × ~24 s | square edges ~35° in image; yaw steady within ±8° |
 | twist | 2 × 27–38 s | ±84° / ±68° |
+| taps | 2 usable (69 s, 31 s) + 1 accidental 0.3 s | 18 + 8 labelled taps (last vol pair = stop); label follows tap by ~2 s |
 
 **Axis mapping (first look):** sliding along body X → image x; body Y → image y; phone yaw → image rotation = +gyro_z (no sign flip).
 
@@ -21,4 +22,6 @@ Raw data in `recordings/` (gitignored). All takes 640×480 @ 60 fps, main camera
 
 **Exposure:** metered light is bimodal across takes (≈4 000 vs ≈10 000–13 000 µs·ISO), so something (probably the user leaning over the desk) shades the camera during metering even with the brightest-of-1.5 s rule. Several takes ran at 3–4 ms / ISO 3200 instead of 2 ms. Usable, but planned fix: an option to reuse one exposure for the whole session.
 
-Still to record: lift, taps, free, dark, lights, raw-mode ruler_x.
+**Taps on the cloth mouse pad:** every labelled tap is a clear spike in |Δaccel_z| per sample (at 500 Hz): take 1 min/median/max 1.08/3.4/10.4 m/s², take 2 (weaker, partly while sliding) 0.52/1.35/1.95. Quiet-time noise p99.9 ≈ 0.03–0.07, max 0.15. DESIGN.md's `thr_min = 1.5` would catch only 14/26; 0.3–0.5 catches 26/26 with 0 false peaks at rest. Volume-key presses themselves give ~0.3–0.5 spikes (irrelevant in real use). False-tap rate while sliding still to check on `free`.
+
+Still to record: lift, free, dark, lights, raw-mode ruler_x.

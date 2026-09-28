@@ -33,6 +33,24 @@ class Recording:
     def tag(self) -> str:
         return self.meta["protocol"]
 
+    def intrinsics(self) -> tuple[np.ndarray, np.ndarray]:
+        """Camera matrix K and distortion (k1,k2,k3,p1,p2 as Camera2 gives them) at stream resolution.
+
+        Camera2 intrinsics refer to the active array; the stream is that array scaled (same aspect
+        assumed, as for 640x480 from 4080x3060).
+        """
+        c = self.meta["camera_characteristics"]
+        fx, fy, cx, cy, _ = c["intrinsics"]
+        x0, y0, x1, y1 = (float(v) for v in str(c["active_array"]).replace(",", " ").split())
+        s = self.width / (x1 - x0)
+        K = np.array([[fx * s, 0, (cx - x0) * s], [0, fy * s, (cy - y0) * s], [0, 0, 1.0]])
+        return K, np.array(c.get("distortion") or [0, 0, 0, 0, 0], float)
+
+    def ground_truth(self) -> pd.DataFrame | None:
+        """gt.csv (synthetic recordings only): t_ns, x, y, psi, vx, vy of the reference point."""
+        f = self.path / "gt.csv"
+        return pd.read_csv(f) if f.exists() else None
+
     def imu_of(self, kind: str) -> pd.DataFrame:
         """Samples of one sensor type ('gyro', 'accel', ...), sorted by time."""
         return self.imu[self.imu["type"] == kind].sort_values("t_ns").reset_index(drop=True)

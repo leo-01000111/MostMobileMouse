@@ -16,3 +16,4 @@ Record decisions that deviate from or refine DESIGN.md, with date and reason.
 - 2026-09-28: Toolchain: Temurin JDK 21, Android cmdline-tools (new `android` CLI), platform android-36, build-tools 36.1.0, NDK 29.0.14206865, CMake 3.31.6 (SDK's), platform-tools 37.0.1. ANDROID_HOME set, adb on user PATH.
 - 2026-09-28: GitHub repo https://github.com/leo-01000111/MostMobileMouse (public). Recordings and tier0 photos are gitignored (they show the user's home).
 - 2026-09-28: User allows pushing to origin/main without asking.
+- 2026-09-28: Tap threshold floor: DESIGN.md §6.6 `thr_min = 1.5 m/s²` per sample is too high for a soft mouse pad (misses ~45 % of taps). Default lowered to ~0.4 (to confirm against false taps while sliding in `free`). Keep the adaptive median+8·MAD part.
