@@ -160,7 +160,7 @@ def main():
     cfg = EngineConfig(**kw)
     if tuned:
         print("using tuned settings:", {k: round(v, 3) if isinstance(v, float) else v for k, v in kw.items()})
-    lam0 = json.loads(STATE.read_text()).get("lam") if STATE.exists() else tuned.get("lam")
+    ratio0 = json.loads(STATE.read_text()).get("gauge_ratio") if STATE.exists() else tuned.get("gauge_ratio")
     eng = None
     n_frames = n_skipped = 0
     t_last = time.time()
@@ -173,9 +173,9 @@ def main():
             if msg[0] == "hello":
                 h = msg[1]
                 K, dist = intrinsics_from(h["camera_characteristics"], h["width"])
-                eng = Engine(K, dist, (h["width"], h["height"]), cfg, lam0=lam0)
+                eng = Engine(K, dist, (h["width"], h["height"]), cfg, gauge_ratio=ratio0)
                 print(f"hello: {h['device'].get('model')} {h['width']}x{h['height']} @ {h['fps']} fps, "
-                      f"exposure {h['exposure_ns'] / 1e6:.2f} ms ISO {h['iso']}; remembered scale {lam0}")
+                      f"exposure {h['exposure_ns'] / 1e6:.2f} ms ISO {h['iso']}; remembered scale ratio {ratio0}")
                 continue
             if eng is None:
                 continue
@@ -204,9 +204,9 @@ def main():
     except KeyboardInterrupt:
         print("\nstopped")
     finally:
-        if eng is not None and eng.lam and eng.stats["scale_updates"] > 0:
-            STATE.write_text(json.dumps({"lam": eng.lam}))
-            print(f"saved scale {eng.lam:.4f} to {STATE.name}")
+        if eng is not None and eng.gauge_ratio():
+            STATE.write_text(json.dumps({"gauge_ratio": eng.gauge_ratio()}))
+            print(f"saved scale ratio {eng.gauge_ratio():.3f} to {STATE.name}")
         if save:
             save.close()
         s.close()

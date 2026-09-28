@@ -79,8 +79,9 @@ class Event:
 
 class Engine:
     def __init__(self, K, dist, size, cfg: EngineConfig | None = None, fe_cfg: FrontEndConfig | None = None,
-                 lam0: float | None = None):
-        """lam0: scale (m per relative unit) remembered from a previous session, if any."""
+                 gauge_ratio: float | None = None):
+        """gauge_ratio: calibrated scale ÷ ceiling-gauge scale from a previous session. The front end's relative
+        units differ per session, so the raw scale can't be carried over; this ratio can."""
         self.cfg = cfg or EngineConfig()
         c = self.cfg
         fe_cfg = fe_cfg or FrontEndConfig()
@@ -123,7 +124,8 @@ class Engine:
         self.lifted = False
         self.anomaly_frames = 0
         # vision / output
-        self.lam = lam0                    # metres per relative unit
+        self.lam = None                    # metres per relative unit
+        self.gauge_ratio0 = gauge_ratio
         self.lam_gauge: list = []
         self.stroke_vis = np.zeros(2)
         self.stroke_start = None
@@ -363,7 +365,7 @@ class Engine:
             self.lam_gauge.append(1.0 / (c.ceiling_h * rho15))
             self.lam_gauge = self.lam_gauge[-120:]
         if self.lam is None and len(self.lam_gauge) >= 30:
-            self.lam = 1.0 / float(np.median(self.lam_gauge))
+            self.lam = (self.gauge_ratio0 or 1.0) / float(np.median(self.lam_gauge))
         # lift from vision scale change
         self.anomaly_frames = self.anomaly_frames + 1 if abs(sigma) > c.lift_scale_anomaly else 0
         if self.anomaly_frames >= 2 and not self.lifted:
@@ -404,6 +406,12 @@ class Engine:
         if n.any():
             # +X → right, +Y (forward) → up (screen dy negative)
             self.events.append(Event(t, "move", int(n[0]), int(-n[1])))
+
+    def gauge_ratio(self) -> float | None:
+        """Calibrated scale relative to the ceiling gauge (store this between sessions)."""
+        if not self.lam or not self.lam_gauge or self.stats["scale_updates"] == 0:
+            return None
+        return float(self.lam * np.median(self.lam_gauge))
 
     def drain(self) -> list[Event]:
         ev, self.events = self.events, []

@@ -112,7 +112,7 @@ class PhoneInput:
         self.msg = "connected: put the phone face-down (3 beeps), hands off until the long beep"
         q: queue.Queue = queue.Queue()
         threading.Thread(target=lv.reader, args=(s, q, None), daemon=True).start()
-        lam0 = self.overrides.get("lam")
+        ratio0 = self.overrides.get("gauge_ratio")
         while True:
             m = q.get()
             arr = now_ns()
@@ -123,7 +123,7 @@ class PhoneInput:
             if m[0] == "hello":
                 h = self.hello = m[1]
                 K, dist = intrinsics_from(h["camera_characteristics"], h["width"])
-                self.eng = Engine(K, dist, (h["width"], h["height"]), self.cfg, lam0=lam0)
+                self.eng = Engine(K, dist, (h["width"], h["height"]), self.cfg, gauge_ratio=ratio0)
                 self.eng.frame_log = []
                 self.msg = ""
                 continue
@@ -181,8 +181,10 @@ class PhoneInput:
                    header="t_ns,psi_prev,psi,wx,wy,sigma,valid,n_rhos,rho15,rho_med,n_inliers,arrival_pc_ns",
                    comments="", fmt="%.10g")
         (d / "phone_hello.json").write_text(json.dumps(self.hello))
-        if self.eng.lam and self.eng.stats["scale_updates"] > 0:
-            self.overrides["lam"] = self.eng.lam
+        r = self.eng.gauge_ratio()
+        if r:
+            self.overrides["gauge_ratio"] = r
+        self.overrides.pop("lam", None)
 
 
 class BotInput:
@@ -719,7 +721,7 @@ def main():
             tune_lines = tune.run(d, overrides)
         except Exception as e:  # noqa: BLE001
             tune_lines = [f"tuning failed: {e}"]
-    elif a.input == "phone" and "lam" in overrides:
+    elif a.input == "phone" and "gauge_ratio" in overrides:
         PARAMS.write_text(json.dumps(overrides, indent=1))
     import tune as _t
     base = _t.latest_session("mouse", exclude=d)
