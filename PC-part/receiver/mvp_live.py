@@ -132,7 +132,7 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="print clicks/scrolls, don't move the cursor")
     ap.add_argument("--mount-yaw", type=float, default=0.0, help="degrees; use if cursor directions are rotated")
     ap.add_argument("--dpi", type=float, default=800.0)
-    ap.add_argument("--body-aligned", action="store_true")
+    ap.add_argument("--world-aligned", action="store_true", help="counter-rotate by gyro yaw (drifts after lifts)")
     ap.add_argument("--scroll", action="store_true", help="enable twist-to-scroll even if the tuned settings turn it off")
     ap.add_argument("--save", help="write the raw stream to this file")
     a = ap.parse_args()
@@ -150,7 +150,9 @@ def main():
     tuned = json.loads(tuned_file.read_text()) if tuned_file.exists() else {}
     fields = EngineConfig.__dataclass_fields__
     kw = {k: v for k, v in tuned.items() if k in fields}
-    kw.update(dpi=a.dpi, world_aligned=not a.body_aligned)
+    kw.update(dpi=kw.get("dpi", a.dpi) if a.dpi == 800.0 else a.dpi)
+    if a.world_aligned:
+        kw["world_aligned"] = True
     if a.mount_yaw:
         kw["mount_yaw_deg"] = a.mount_yaw
     if a.scroll:

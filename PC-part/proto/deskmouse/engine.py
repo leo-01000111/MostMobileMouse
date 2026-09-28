@@ -27,7 +27,7 @@ class EngineConfig:
     r_cam: tuple[float, float] = (-0.022, 0.044)  # main lens from phone centre, body frame (m), S24 spec estimate
     mount_yaw_deg: float = 0.0   # rotate output if the phone lies sideways (90 = top edge pointing left)
     aspect: float = 1.0          # extra gain on the vertical axis (auto-tuned by the game)
-    world_aligned: bool = True
+    world_aligned: bool = False  # body-aligned like a real mouse; world-aligned drifted with yaw errors after lifts
     instant_left: bool = False   # left click on the tap itself (no double-tap wait); double tap then also sends right
     # output mapping (§6.8)
     dpi: float = 800.0
