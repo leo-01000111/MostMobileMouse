@@ -59,9 +59,11 @@ A1 and A2/A3 run in parallel. The only hard dependency on you is the Tier 1 sess
 - `deskmouse/io.py`: loader for the §5.3 format (video via OpenCV, `frames.y8` raw mode, CSVs via pandas), timestamp alignment helpers.
 - `deskmouse/sim.py`: renders a textured ceiling plane through a pinhole camera for a given planar trajectory (translation + yaw, optional small tilt and lift), plus simulated IMU with noise, bias and 400 Hz sampling. Produces **the same directory format** as the recorder, so every tool works on both.
 - Trajectory presets that mirror the protocols: `still`, `ruler_x/y`, `square`, `twist`, `lift`, `taps`.
+- Scene presets: plain plane, textured plane, **multi-depth** (ceiling + shelves/monitor/hutch at 0.3–1.5 m, as seen at place 1), low-texture, and moving distractors (a head, a changing screen).
 - Unit tests (§10).
 
 ### A3. M1b: vision front end on synthetic data
+- **Multi-depth aware** (notes/DECISIONS.md, Tier 0 finding): parallel-flow direction consensus + per-track inverse depth, instead of one ρ for the whole image.
 - §6.2 in full: LK tracking with gyro-predicted initial flow, forward-backward check, undistortion, de-rotation, RANSAC translation, scale check, replenishment, frame quality.
 - Vision-only odometry with fixed ρ, `replay.py --only-vision --plot`.
 - **Done when**: synthetic tests pass the §7 accuracy targets in vision-only mode (with known ρ).
