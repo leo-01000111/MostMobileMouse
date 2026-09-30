@@ -19,7 +19,8 @@ still: 0 cursor motion. square: 3 recognisable laps, scale calibrated after 16 s
 Live link: 60 fps processed, 0 skipped, front end ~9 ms/frame.
 
 ## Known limitations
-- USB cable required; Windows only; the PC does the work.
+- USB cable or Wi-Fi (`--host PHONE_IP`, same network; the phone's server listens on all interfaces). Windows only; the PC does the work.
+- No Bluetooth: the raw stream (640×480 Y at 60 fps ≈ 150 Mbit/s) is ~100× what Bluetooth Classic carries. Bluetooth needs tracking on the phone (M3/M4) so only cursor events cross the link.
 - Latency = camera pipeline + transfer (not yet measured), no IMU prediction yet.
 - Scale is off until the first few strokes; cursor directions assume the phone's top edge points away from you
   (use `--mount-yaw 90 / -90 / 180` otherwise).

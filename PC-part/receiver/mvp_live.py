@@ -1,6 +1,7 @@
-"""MVP: phone (face-down, "Mouse mode" in the recorder app, USB) -> this script -> Windows cursor.
+"""MVP: phone (face-down, "Mouse mode" in the recorder app, USB or Wi-Fi) -> this script -> Windows cursor.
 
-usage:  python PC-part/receiver/mvp_live.py [--dry-run] [--mount-yaw 0] [--dpi 800] [--save out.bin]
+usage:  python PC-part/receiver/mvp_live.py [--host PHONE_IP] [--dry-run] [--mount-yaw 0] [--dpi 800] [--save out.bin]
+Without --host the phone must be on USB (adb forward); with --host it connects over Wi-Fi (same network).
 Stop with Ctrl+C, or press both volume keys on the phone.
 """
 import argparse
@@ -109,12 +110,12 @@ def reader(s, q, save):
         q.put(("end", str(e)))
 
 
-def connect():
+def connect(host="127.0.0.1"):
     """adb accepts the forwarded connection even when the phone isn't listening; wait for real data."""
     while True:
         s = None
         try:
-            s = socket.create_connection(("127.0.0.1", PORT), timeout=2)
+            s = socket.create_connection((host, PORT), timeout=2)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8 << 20)
             s.settimeout(30)  # the phone sends its first message after countdown + metering (~5 s)
             if s.recv(1, socket.MSG_PEEK):
@@ -127,8 +128,20 @@ def connect():
         time.sleep(1)
 
 
+def open_stream(host=None):
+    """USB (adb forward) when host is None, else a direct TCP connection to the phone over Wi-Fi."""
+    if host is None:
+        print("Waiting for the phone on USB (plug it in, allow USB debugging if asked)...")
+        subprocess.run([adb(), "wait-for-device"], check=True)
+        subprocess.run([adb(), "forward", f"tcp:{PORT}", f"tcp:{PORT}"], check=True)
+        return connect()
+    print(f"Connecting to the phone at {host}:{PORT} over Wi-Fi...")
+    return connect(host)
+
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--host", help="phone IP address: connect over Wi-Fi instead of USB")
     ap.add_argument("--dry-run", action="store_true", help="print clicks/scrolls, don't move the cursor")
     ap.add_argument("--mount-yaw", type=float, default=0.0, help="degrees; use if cursor directions are rotated")
     ap.add_argument("--dpi", type=float, default=800.0)
@@ -139,9 +152,8 @@ def main():
 
     print("Waiting for the phone on USB (plug it in, allow USB debugging if asked)...")
     subprocess.run([adb(), "wait-for-device"], check=True)
-    subprocess.run([adb(), "forward", f"tcp:{PORT}", f"tcp:{PORT}"], check=True)
-    print("Open the recorder app on the phone and tap 'Mouse mode'. Waiting for the phone...")
-    s = connect()
+    print("Open the recorder app on the phone and tap 'Mouse mode'.")
+    s = open_stream(a.host)
     print("Connected. Put the phone face-down now (3 beeps, then hands off for 1.5 s).")
     save = open(a.save, "wb") if a.save else None
     q = queue.Queue()

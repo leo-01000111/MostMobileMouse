@@ -35,7 +35,7 @@ This split replaces DESIGN.md §4's `desk-mouse/` layout (mapping in plans/PLAN.
 - Pull + validate recordings: `python PC-part/proto/scripts/pull_recordings.py`
 - Validate: `python PC-part/proto/scripts/validate_recording.py recordings/`
 - Tier 0 stock-camera check: `python PC-part/proto/scripts/tier0_check.py recordings/tier0/<place>`
-- MVP live mouse: `python PC-part/receiver/mvp_live.py [--dry-run] [--mount-yaw 90]`, then "Mouse mode" on the phone (notes/MVP.md)
+- MVP live mouse: `python PC-part/receiver/mvp_live.py [--host PHONE_IP] [--dry-run] [--mount-yaw 90]`, then "Mouse mode" on the phone (notes/MVP.md). No `--host` = USB; `--host` = Wi-Fi (Bluetooth is too slow for the raw camera stream). `aimlab.py` takes `--host` too.
 - MVP replay on a recording: `python PC-part/proto/scripts/mvp_replay.py recordings/<rec> --plot`
 - Aim-lab game: `python PC-part/game/aimlab.py --input mouse|phone|bot` (PC-part/game/README.md); tuner writes PC-part/game/phone_params.json
 - In Git Bash, prefix adb commands with `MSYS_NO_PATHCONV=1` or phone paths get mangled.

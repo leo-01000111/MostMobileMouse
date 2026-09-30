@@ -97,7 +97,7 @@ class PhoneInput:
     """Receives the phone stream, runs the engine in a thread, moves a virtual cursor (1 count = 1 px)."""
     name = "phone"
 
-    def __init__(self, overrides: dict):
+    def __init__(self, overrides: dict, host=None):
         import mvp_live
         from deskmouse.engine import EngineConfig
 
@@ -118,15 +118,14 @@ class PhoneInput:
         self.skipped = 0
         self._t = time.time()
         self._live = mvp_live
+        self._host = host
         threading.Thread(target=self._run, daemon=True).start()
 
     def _run(self):
         from deskmouse.engine import Engine
         from deskmouse.io import intrinsics_from
         lv = self._live
-        import subprocess
-        subprocess.run([lv.adb(), "forward", f"tcp:{lv.PORT}", f"tcp:{lv.PORT}"], check=True)
-        s = lv.connect()
+        s = lv.open_stream(self._host)
         self.connected = True
         self.msg = "connected: put the phone face-down (3 beeps), hands off until the long beep"
         q = _FrameCountingQueue()
@@ -627,6 +626,7 @@ def main():
     ap.add_argument("--headless", action="store_true")
     ap.add_argument("--levels", help="comma-separated level numbers to play (1-6), default all")
     ap.add_argument("--no-tune", action="store_true")
+    ap.add_argument("--host", help="phone IP address: connect over Wi-Fi instead of USB")
     a = ap.parse_args()
 
     if a.headless:
@@ -643,7 +643,7 @@ def main():
     clock = pygame.time.Clock()
 
     overrides = json.loads(PARAMS.read_text()) if PARAMS.exists() else {}
-    inp = (MouseInput() if a.input == "mouse" else PhoneInput(overrides) if a.input == "phone"
+    inp = (MouseInput() if a.input == "mouse" else PhoneInput(overrides, a.host) if a.input == "phone"
            else BotInput(a.bot_rot, a.bot_aspect))
     levels = make_levels()
     if a.input == "phone" and not overrides.get("scroll_enabled", True):
