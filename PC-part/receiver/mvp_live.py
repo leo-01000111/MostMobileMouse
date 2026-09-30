@@ -137,6 +137,8 @@ def main():
     ap.add_argument("--save", help="write the raw stream to this file")
     a = ap.parse_args()
 
+    print("Waiting for the phone on USB (plug it in, allow USB debugging if asked)...")
+    subprocess.run([adb(), "wait-for-device"], check=True)
     subprocess.run([adb(), "forward", f"tcp:{PORT}", f"tcp:{PORT}"], check=True)
     print("Open the recorder app on the phone and tap 'Mouse mode'. Waiting for the phone...")
     s = connect()
