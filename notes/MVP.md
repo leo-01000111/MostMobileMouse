@@ -20,6 +20,8 @@ Live link: 60 fps processed, 0 skipped, front end ~9 ms/frame.
 
 ## Known limitations
 - USB cable or Wi-Fi (`--host PHONE_IP`, same network; the phone's server listens on all interfaces). Windows only; the PC does the work.
+  Wi-Fi measured ~63 Mbit/s (2026-09-30) vs ~150 needed raw → raw got ~25 fps. Over Wi-Fi the phone now sends JPEG q90
+  (~39 kB/frame ≈ 19 Mbit/s on recorded frames, ~1 grey level error); over USB it stays raw. The app shows its Wi-Fi IP.
 - No Bluetooth: the raw stream (640×480 Y at 60 fps ≈ 150 Mbit/s) is ~100× what Bluetooth Classic carries. Bluetooth needs tracking on the phone (M3/M4) so only cursor events cross the link.
 - Latency = camera pipeline + transfer (not yet measured), no IMU prediction yet.
 - Scale is off until the first few strokes; cursor directions assume the phone's top edge points away from you

@@ -146,7 +146,7 @@ class RecorderController(
             if (!cam.isOpenWith(cfg)) cam.open(cfg)
             s = StreamServer()
             phase = Phase.WaitingForPc
-            status = "waiting for PC on port ${s.port} (adb forward tcp:${s.port} tcp:${s.port})"
+            status = "waiting for PC on port ${s.port} (USB: adb forward; Wi-Fi: ${wifiIp() ?: "no Wi-Fi"})"
             if (!s.awaitClient { !stopRequested }) { s.close(); phase = Phase.Idle; status = ""; return }
             phase = Phase.Countdown
             for (i in 3 downTo 1) { remaining = i; beeper.tick(); Thread.sleep(1000) }
@@ -157,7 +157,7 @@ class RecorderController(
             cam.lockExposure()
             cam.awaitExposureApplied()
             val hello = org.json.JSONObject()
-                .put("width", cfg.width).put("height", cfg.height).put("fps", cfg.fps)
+                .put("width", cfg.width).put("height", cfg.height).put("fps", cfg.fps).put("jpeg", s.jpeg)
                 .put("exposure_ns", cam.appliedExposureNs).put("iso", cam.appliedIso)
                 .put("camera_characteristics", DeviceCaps.camera(cm, cfg.choice.openId))
                 .put("device", DeviceCaps.device())
@@ -184,6 +184,14 @@ class RecorderController(
             phase = Phase.Idle
         }
     }
+
+    /** The phone's IPv4 address on Wi-Fi, shown so the user can pass it to mvp_live.py --host. */
+    private fun wifiIp(): String? = try {
+        java.net.NetworkInterface.getNetworkInterfaces().toList()
+            .filter { it.isUp && it.name.startsWith("wlan") }
+            .flatMap { it.inetAddresses.toList() }
+            .firstOrNull { it is java.net.Inet4Address }?.hostAddress
+    } catch (_: Exception) { null }
 
     private fun finishRecording(r: Recording) {
         rec = null

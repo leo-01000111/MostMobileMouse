@@ -18,6 +18,7 @@ import threading
 import time
 from pathlib import Path
 
+import cv2
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -104,6 +105,13 @@ def reader(s, q, save):
                 if save:
                     save.write(t + h + img)
                 q.put(("frame", ts, exp, skew, np.frombuffer(img, np.uint8).reshape(hh, w)))
+            elif t == b"":  # JPEG frame (Wi-Fi)
+                h = recv_exact(s, 24)
+                ts, exp, skew, w, hh, n = struct.unpack("<qiiHHI", h)
+                jpg = recv_exact(s, n)
+                if save:
+                    save.write(t + h + jpg)
+                q.put(("frame", ts, exp, skew, cv2.imdecode(np.frombuffer(jpg, np.uint8), cv2.IMREAD_GRAYSCALE)))
             else:
                 raise ValueError(f"bad message type {t!r}")
     except Exception as e:  # noqa: BLE001
@@ -186,7 +194,7 @@ def main():
                 h = msg[1]
                 K, dist = intrinsics_from(h["camera_characteristics"], h["width"])
                 eng = Engine(K, dist, (h["width"], h["height"]), cfg, gauge_ratio=ratio0)
-                print(f"hello: {h['device'].get('model')} {h['width']}x{h['height']} @ {h['fps']} fps, "
+                print(f"hello: {h['device'].get('model')} {h['width']}x{h['height']} @ {h['fps']} fps{' JPEG' if h.get('jpeg') else ''}, "
                       f"exposure {h['exposure_ns'] / 1e6:.2f} ms ISO {h['iso']}; remembered scale ratio {ratio0}")
                 continue
             if eng is None:
