@@ -41,6 +41,7 @@ Notes:
 - Also Game Rotation Vector, Linear Acceleration (Samsung fusion).
 
 ## Bluetooth
+- **Confirmed 2026-10-05:** pairs with Windows 11 as a Bluetooth mouse (BluetoothHidDevice). A computer that already paired with the phone as a phone must remove that pairing first, or it never sees the mouse.
 - `bluetooth.profile.hid.device.enabled = true`: the HID device profile (phone acting as a mouse) is enabled, so M6 looks feasible. Still confirm at runtime via `getProfileProxy(HID_DEVICE)`.
 
 ## Desk and room
