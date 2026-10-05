@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "DeskRec"
 
-enum class Phase { Idle, Countdown, Metering, Recording, Saving, WaitingForPc, Streaming }
+enum class Phase { Idle, Countdown, Metering, Recording, Saving, WaitingForPc, Streaming, BtMouse }
 
 /** Owns camera + IMU for the activity's lifetime; drives live monitoring and recordings. */
 class RecorderController(
@@ -49,9 +49,38 @@ class RecorderController(
     var live by mutableStateOf("")
     var preview by mutableStateOf<Bitmap?>(null)
     var lastSummary by mutableStateOf("")
+    var btStatus by mutableStateOf("Bluetooth mouse off")
+
+    /** Set by the activity once Bluetooth permissions are granted. */
+    var bt: BtMouse? = null
+        set(v) {
+            field = v
+            v?.listener = object : BtMouse.Listener { override fun onBtState(text: String) { btStatus = text } }
+        }
+
+    /** Bluetooth check without tracking: the cursor draws two circles (T1.1). */
+    fun btTestCircle() {
+        val b = bt ?: return
+        if (!b.connected) { btStatus = "not connected to a computer"; return }
+        Thread {
+            val r = 150.0
+            val steps = 240 // 2 circles at 120 Hz = 2 s
+            var px = r; var py = 0.0
+            for (i in 1..steps) {
+                val a = 2 * Math.PI * 2 * i / steps
+                val x = r * Math.cos(a); val y = r * Math.sin(a)
+                b.move(Math.round(x - px).toInt(), Math.round(y - py).toInt())
+                px += Math.round(x - px); py += Math.round(y - py)
+                Thread.sleep(8)
+            }
+            b.click(1)
+            btStatus = "test done: two circles + one left click"
+        }.start()
+    }
 
     @Volatile private var rec: Recording? = null
     @Volatile private var streamer: StreamServer? = null
+    @Volatile private var mouse: MouseSession? = null
     @Volatile private var stopRequested = false
     private var liveFrames = 0
     private var liveT0 = 0L
@@ -186,6 +215,60 @@ class RecorderController(
         }
     }
 
+    /** Bluetooth mouse: tracking runs on the phone (C++ core), reports go straight to the paired computer. */
+    fun btMouse() {
+        if (phase != Phase.Idle || choice == null) return
+        val b = bt
+        if (b == null || !b.connected) { btStatus = "connect a computer first (Bluetooth mouse section)"; return }
+        stopRequested = false
+        worker.execute { runBtMouse(b) }
+    }
+
+    private fun runBtMouse(b: BtMouse) {
+        val cfg = config()
+        var m: MouseSession? = null
+        val dir = root.parentFile ?: root
+        try {
+            if (!cam.isOpenWith(cfg)) cam.open(cfg)
+            phase = Phase.Countdown
+            for (i in 3 downTo 1) { remaining = i; beeper.tick(); Thread.sleep(1000) }
+            phase = Phase.Metering
+            cam.unlockExposure()
+            cam.resetMetering()
+            Thread.sleep(1500)
+            cam.lockExposure()
+            cam.awaitExposureApplied()
+            val (K, dist) = NativeEngine.intrinsics(cam.chars, cfg.width)
+            val (params, ratio) = MouseSession.loadParams(dir)
+            Log.i(TAG, "bt mouse: ${params.size} tuned params, gauge ratio $ratio, front=${cfg.choice.front}")
+            m = MouseSession(NativeEngine(K, dist, cfg.width, cfg.height, params, ratio), b, cfg.width, cfg.height)
+            imu.onSample = { t, k, x, y, z -> m.onImu(t, k, x, y, z) }
+            mouse = m
+            phase = Phase.BtMouse
+            beeper.start()
+            val t0 = SystemClock.elapsedRealtime()
+            while (!stopRequested && b.connected) {
+                remaining = ((SystemClock.elapsedRealtime() - t0) / 1000).toInt()
+                val s = m.state
+                val mode = when { s[1] == 1.0 -> "lifted"; s[2] == 1.0 -> "scroll"; s[0] == 1.0 -> "still"; else -> "moving" }
+                status = (if (cfg.choice.front) "FRONT camera: engine assumes face down, directions wrong. " else "") + "BT mouse: %d frames, %d skipped, engine %.1f ms (max %.1f), %s, scale %s, calibrations %.0f, taps %.0f, inliers %.0f".format(
+                    m.processed, m.skipped, m.msMean, m.msMax, mode, if (s[3].isNaN()) "-" else "%.4f".format(s[3]), s[6], s[5], s[8])
+                Thread.sleep(200)
+            }
+            if (!b.connected) status = "Bluetooth disconnected"
+        } catch (e: Exception) {
+            Log.e(TAG, "bt mouse failed", e); beeper.error(); status = "BT mouse error: ${e.message}"
+        } finally {
+            imu.onSample = null
+            mouse = null
+            m?.let { MouseSession.saveRatio(dir, it.state[9]); it.stop() }
+            beeper.stop()
+            cam.unlockExposure()
+            lastSummary = "BT mouse ended: ${m?.processed ?: 0} frames, ${m?.skipped ?: 0} skipped, engine %.1f ms/frame".format(m?.msMean ?: 0.0)
+            phase = Phase.Idle
+        }
+    }
+
     /** The phone's IPv4 address on Wi-Fi, shown so the user can pass it to mvp_live.py --host. */
     private fun wifiIp(): String? = try {
         java.net.NetworkInterface.getNetworkInterfaces().toList()
@@ -227,7 +310,7 @@ class RecorderController(
     fun onKey(keyCode: Int, down: Boolean, repeat: Boolean): Boolean {
         if (keyCode != KeyEvent.KEYCODE_VOLUME_UP && keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) return false
         if (phase == Phase.Idle) return false
-        if (phase == Phase.Streaming || phase == Phase.WaitingForPc) {
+        if (phase == Phase.Streaming || phase == Phase.WaitingForPc || phase == Phase.BtMouse) {
             if (repeat) return true
             if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) upDown = down else downDown = down
             if (upDown && downDown) stopRequested = true
@@ -245,6 +328,11 @@ class RecorderController(
         val r = rec
         if (r != null) {
             if (r.sink.write(y, tNs)) r.frameTs.add(tNs) else r.droppedFrames++
+        }
+        mouse?.let { ms ->
+            val res = cam.lastResult
+            val skew = res?.get(android.hardware.camera2.CaptureResult.SENSOR_ROLLING_SHUTTER_SKEW) ?: 0L
+            ms.onFrame(y, tNs, cam.appliedExposureNs, skew)
         }
         streamer?.let { st ->
             val skew = cam.lastResult?.get(android.hardware.camera2.CaptureResult.SENSOR_ROLLING_SHUTTER_SKEW) ?: 0L

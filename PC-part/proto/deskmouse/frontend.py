@@ -16,6 +16,27 @@ import numpy as np
 from .config import FrontEndConfig
 
 J = np.array([[0.0, -1.0], [1.0, 0.0]])
+_M64 = (1 << 64) - 1
+
+
+class SplitMix64:
+    """Tiny PRNG shared with the C++ core (PC-part/core/src/frontend.cpp) so both draw the same RANSAC samples."""
+
+    def __init__(self, seed: int = 0):
+        self.s = seed & _M64
+
+    def next(self) -> int:
+        self.s = (self.s + 0x9E3779B97F4A7C15) & _M64
+        z = self.s
+        z = ((z ^ (z >> 30)) * 0xBF58476D1CE4E5B9) & _M64
+        z = ((z ^ (z >> 27)) * 0x94D049BB133111EB) & _M64
+        return z ^ (z >> 31)
+
+    def pair(self, m: int) -> tuple[int, int]:
+        """Two distinct positions in range(m), m >= 2."""
+        a = self.next() % m
+        b = self.next() % (m - 1)
+        return a, b + (b >= a)
 
 
 @dataclass
@@ -63,7 +84,7 @@ class FrontEnd:
         c = self.cfg
         self.lk = dict(winSize=(c.lk_win, c.lk_win), maxLevel=c.lk_levels,
                        criteria=(cv2.TERM_CRITERIA_COUNT | cv2.TERM_CRITERIA_EPS, c.lk_iters, c.lk_eps))
-        self.rng = np.random.default_rng(0)
+        self.rng = SplitMix64(0)
 
     # ------------------------------------------------------------------ helpers
     def _prep(self, y: np.ndarray) -> np.ndarray:
@@ -145,7 +166,7 @@ class FrontEnd:
         dflat = d.reshape(-1)
         # All hypotheses at once: each from 2 tracks (4 equations, unknowns w, dpsi), batched normal equations.
         H = c.ransac_iters
-        s = np.stack([self.rng.choice(idx, 2, replace=False) for _ in range(H)])  # (H, 2)
+        s = idx[np.array([self.rng.pair(len(idx)) for _ in range(H)])]  # (H, 2)
         A = np.zeros((H, 4, 3))
         A[:, 0::2, 0] = rho[s]
         A[:, 1::2, 1] = rho[s]

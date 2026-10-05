@@ -18,7 +18,7 @@ recordings/              user recordings, rec_YYYYMMDD_HHMMSS_<tag>/ (large; nev
 Phone-part/recorder/     M0 recorder app (Kotlin, Compose, Camera2)
 Phone-part/app/          M4+ real-time mouse app
 PC-part/proto/           M1–M2 Python reference implementation + replay/evaluate scripts
-PC-part/core/            M3 C++17 core (OpenCV + Eigen, pybind11); Android CMake references it by relative path
+PC-part/core/            C++17 core (port of the MVP engine, OpenCV); built by Phone-part/recorder's CMake; tools/replay.cpp = parity tool
 PC-part/receiver/        UDP receiver (pynput)
 ```
 This split replaces DESIGN.md §4's `desk-mouse/` layout (mapping in plans/PLAN.md §5).
@@ -39,6 +39,8 @@ This split replaces DESIGN.md §4's `desk-mouse/` layout (mapping in plans/PLAN.
 - MVP live mouse: `python PC-part/receiver/mvp_live.py [--host PHONE_IP] [--dry-run] [--mount-yaw 90]`, then "Mouse mode" on the phone (notes/MVP.md). No `--host` = USB; `--host` = Wi-Fi (Bluetooth is too slow for the raw camera stream). `aimlab.py` takes `--host` too.
 - MVP replay on a recording: `python PC-part/proto/scripts/mvp_replay.py recordings/<rec> --plot`
 - Aim-lab game: `python PC-part/game/aimlab.py --input mouse|phone|bot` (PC-part/game/README.md); tuner writes PC-part/game/phone_params.json
+- **Bluetooth mouse (tracking on the phone, no PC software):** recorder app → Bluetooth mouse → Pair new computer (first time) → Connect → "Bluetooth mouse (tracking on the phone)". Tuned params: `adb push PC-part/game/phone_params.json /sdcard/Android/data/eu.leongorecki.deskmouse.recorder/files/`. Stop = both volume keys.
+- C++ core `PC-part/core/` builds inside the recorder's Gradle build (arm64, OpenCV 4.13 AAR via prefab). Python↔C++ parity on the phone: `python PC-part/proto/scripts/parity.py recordings/<rec> [...] --seconds 15` (build the recorder first).
 - In Git Bash, prefix adb commands with `MSYS_NO_PATHCONV=1` or phone paths get mangled.
 
 ## Target

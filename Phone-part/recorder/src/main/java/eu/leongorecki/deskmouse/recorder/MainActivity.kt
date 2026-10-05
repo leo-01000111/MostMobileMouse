@@ -1,6 +1,9 @@
 package eu.leongorecki.deskmouse.recorder
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.hardware.SensorManager
 import android.hardware.camera2.CameraManager
@@ -56,6 +59,23 @@ class MainActivity : ComponentActivity() {
         if (ok) ctl.startLive() else ctl.status = "camera permission denied"
     }
 
+    private val askBt = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
+        if (res.values.all { it }) startBt() else ctl.btStatus = "Bluetooth permission denied"
+    }
+
+    private val btPerms = arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_ADVERTISE)
+
+    /** Registers the phone as a Bluetooth mouse (asks for permissions the first time). */
+    fun startBt() {
+        if (btPerms.any { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }) { askBt.launch(btPerms); return }
+        if (ctl.bt == null) ctl.bt = BtMouse(this).also { it.start() }
+    }
+
+    /** Lets a computer find the phone for pairing (system dialog, 120 s). */
+    fun makeDiscoverable() {
+        startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -64,7 +84,7 @@ class MainActivity : ComponentActivity() {
             getSystemService(CameraManager::class.java), getSystemService(SensorManager::class.java),
             root, BuildConfig.VERSION_NAME,
         )
-        setContent { MaterialTheme(colorScheme = darkColorScheme()) { Screen(ctl, root) } }
+        setContent { MaterialTheme(colorScheme = darkColorScheme()) { Screen(this, ctl, root) } }
     }
 
     override fun onResume() {
@@ -79,6 +99,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        ctl.bt?.stop()
         ctl.release()
         super.onDestroy()
     }
@@ -90,9 +111,10 @@ class MainActivity : ComponentActivity() {
         ctl.onKey(keyCode, false, false) || super.onKeyUp(keyCode, event)
 }
 
+@SuppressLint("MissingPermission") // bonded-device names: shown only after startBt() got BLUETOOTH_CONNECT
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Screen(c: RecorderController, root: File) {
+private fun Screen(act: MainActivity, c: RecorderController, root: File) {
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         Column(
             Modifier.fillMaxSize().safeDrawingPadding().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -146,6 +168,21 @@ private fun Screen(c: RecorderController, root: File) {
             Button({ c.stream() }, enabled = c.phase == Phase.Idle && c.choice != null, modifier = Modifier.fillMaxWidth()) {
                 Text("Mouse mode: stream to PC (USB or Wi-Fi)")
             }
+            Label("Bluetooth mouse")
+            Text(c.btStatus, color = Color(0xFF80D8FF), fontSize = 13.sp)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                OutlinedButton({ act.startBt() }) { Text("Enable") }
+                OutlinedButton({ act.startBt(); act.makeDiscoverable() }) { Text("Pair new computer") }
+                OutlinedButton({ c.btTestCircle() }) { Text("Test: draw circles") }
+            }
+            Button({ c.btMouse() }, enabled = c.phase == Phase.Idle && c.choice != null, modifier = Modifier.fillMaxWidth()) {
+                Text("Bluetooth mouse (tracking on the phone)")
+            }
+            c.bt?.let { b ->
+                if (b.registered) FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    for (d in b.bonded) OutlinedButton({ b.connect(d) }) { Text("Connect ${d.name}") }
+                }
+            }
             Text("During a take: Vol-Up / Vol-Down = labels, both together = stop. Screen goes black and ignores touches.",
                 color = Color.Gray, fontSize = 12.sp)
             if (c.lastSummary.isNotEmpty()) Text("Last: " + c.lastSummary, color = Color.White, fontSize = 13.sp)
@@ -161,6 +198,8 @@ private fun Screen(c: RecorderController, root: File) {
                 contentAlignment = Alignment.Center,
             ) {
                 Text("${c.phase} · ${c.remaining}\n${c.protocol.tag}", color = Color(0xFF444444), fontSize = 28.sp)
+                if (c.phase == Phase.BtMouse) Text(c.status, color = Color(0xFF333333), fontSize = 11.sp,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
             }
         }
     }

@@ -12,7 +12,8 @@
 | M2 fusion + go/no-go | skipped for now by user's choice; MVP engine (stroke-calibrated scale) instead |
 | MVP (USB stream + PC engine) | working end to end, awaiting user's hands-on test (notes/MVP.md) |
 | Aim-lab game + auto-tune | built, self-tested with bot; awaiting user's mouse baseline + phone sessions |
-| M3–M7 | gated on M2 GO |
+| On-phone engine + Bluetooth mouse | C++ core (MVP engine port) runs on the phone, ~4.3 ms/frame; parity PASS on 7 recordings; Bluetooth HID built, awaiting user's pairing + hands-on test |
+| M3–M7 (DESIGN EKF path) | gated on M2 GO; user chose the MVP engine on the phone instead (DECISIONS 2026-10-05) |
 
 ## Log
 - 2026-09-28: Wrote plans/PLAN.md and plans/RECORDINGS_NEEDED.md; set up folders and CLAUDE.md.
@@ -26,3 +27,4 @@
 - 2026-09-28: MVP built: phone Mouse mode (TCP stream), PC engine + SendInput runner. Live link 60 fps, 0 skipped.
 - 2026-09-28: Aim-lab game (6 levels) + tuner; bot self-test converges (15° → 0.2°). Live latency ~56 ms camera→PC.
 - 2026-10-05: Recorder: front-camera option for face-up tests (meta.json `capture.facing` / `phone_orientation`); io.py estimates K for cameras with placeholder intrinsics. Face-up layout decided (DECISIONS.md). Face-up takes listed in RECORDINGS_NEEDED §2.6.
+- 2026-10-05: Moved tracking onto the phone (user's call, past the M2 gate): C++ port of the MVP engine in PC-part/core (OpenCV 4.13 AAR), JNI in the recorder app, "Bluetooth mouse" mode sends HID reports with no PC software. Engine 4.0–4.5 ms/frame on the S24 (max 12–31 ms). Parity on the phone (scripts/parity.py, first 15 s of still, ruler_x, ruler_y, square, square_rot, twist, taps): engine exact on all 7; closed-loop path error 0–1.7 %, within Python's own 1-grey-level noise floor; clicks and scroll identical. RANSAC now uses a shared SplitMix64 sampler.
