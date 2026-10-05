@@ -23,8 +23,11 @@ import java.util.concurrent.TimeUnit
 
 private const val TAG = "DeskCam"
 
-/** A way to get a rear camera stream: open [openId], optionally at a zoom ratio < 1 (logical → ultra-wide). */
-data class CamChoice(val label: String, val openId: String, val zoom: Float)
+/**
+ * A way to get a ceiling-facing camera stream: open [openId], optionally at a zoom ratio < 1 (logical → ultra-wide).
+ * Rear cameras see the ceiling with the phone face down; [front] cameras with the phone face up.
+ */
+data class CamChoice(val label: String, val openId: String, val zoom: Float, val front: Boolean = false)
 
 data class CaptureConfig(
     val choice: CamChoice,
@@ -51,6 +54,13 @@ fun listCamChoices(cm: CameraManager): List<CamChoice> {
         out += CamChoice("id $id · %.1f mm · 1×".format(focal), id, 1f)
         val zr = ch.get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
         if (zr != null && zr.lower < 0.99f) out += CamChoice("id $id · %.1f× (ultra-wide)".format(zr.lower), id, zr.lower)
+    }
+    // Front cameras after the rear ones, so the default stays the rear main camera.
+    for (id in cm.cameraIdList) {
+        val ch = cm.getCameraCharacteristics(id)
+        if (ch.get(CameraCharacteristics.LENS_FACING) != CameraCharacteristics.LENS_FACING_FRONT) continue
+        val focal = ch.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)?.firstOrNull() ?: 0f
+        out += CamChoice("FRONT id $id · %.1f mm (face up)".format(focal), id, 1f, front = true)
     }
     return out
 }

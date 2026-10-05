@@ -143,7 +143,7 @@ class PhoneInput:
                 K, dist = intrinsics_from(h["camera_characteristics"], h["width"])
                 self.eng = Engine(K, dist, (h["width"], h["height"]), self.cfg, gauge_ratio=ratio0)
                 self.eng.frame_log = []
-                self.msg = ""
+                self.msg = "front camera: engine assumes face down, directions will be wrong" if h.get("facing") == "front" else ""
                 continue
             if self.eng is None:
                 continue

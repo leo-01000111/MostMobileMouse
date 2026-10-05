@@ -86,12 +86,23 @@ class Recording:
 
 
 def intrinsics_from(c: dict, width: int) -> tuple[np.ndarray, np.ndarray]:
-    """K and Camera2 distortion at stream width, from a camera_characteristics dict (meta.json / live hello)."""
+    """K and Camera2 distortion at stream width, from a camera_characteristics dict (meta.json / live hello).
+
+    Some cameras (the S24 front cameras) report placeholder intrinsics [1, 1, 1, 1, 1]. Then K comes from the
+    focal length and physical sensor size (principal point at the centre, no distortion) until we calibrate them.
+    """
     fx, fy, cx, cy, _ = c["intrinsics"]
     x0, y0, x1, y1 = (float(v) for v in str(c["active_array"]).replace(",", " ").split())
+    dist = np.array(c.get("distortion") or [0, 0, 0, 0, 0], float)
+    if fx < 10 and c.get("focal_lengths") and c.get("physical_size_mm"):
+        f = float(c["focal_lengths"][0])
+        pw, ph = (float(v) for v in c["physical_size_mm"])
+        fx, fy = f / pw * (x1 - x0), f / ph * (y1 - y0)
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        dist = np.zeros(5)
     s = width / (x1 - x0)
     K = np.array([[fx * s, 0, (cx - x0) * s], [0, fy * s, (cy - y0) * s], [0, 0, 1.0]])
-    return K, np.array(c.get("distortion") or [0, 0, 0, 0, 0], float)
+    return K, dist
 
 
 def load(path: str | Path) -> Recording:

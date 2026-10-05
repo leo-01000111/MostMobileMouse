@@ -196,6 +196,9 @@ def main():
                 eng = Engine(K, dist, (h["width"], h["height"]), cfg, gauge_ratio=ratio0)
                 print(f"hello: {h['device'].get('model')} {h['width']}x{h['height']} @ {h['fps']} fps{' JPEG' if h.get('jpeg') else ''}, "
                       f"exposure {h['exposure_ns'] / 1e6:.2f} ms ISO {h['iso']}; remembered scale ratio {ratio0}")
+                if h.get("facing") == "front":
+                    print("WARNING: front camera (face up). The engine still assumes face down, so directions, "
+                          "scroll and taps will be wrong; use the recorder for face-up takes.")
                 continue
             if eng is None:
                 continue

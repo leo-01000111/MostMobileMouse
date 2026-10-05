@@ -160,6 +160,7 @@ class RecorderController(
                 .put("width", cfg.width).put("height", cfg.height).put("fps", cfg.fps).put("jpeg", s.jpeg)
                 .put("exposure_ns", cam.appliedExposureNs).put("iso", cam.appliedIso)
                 .put("camera_characteristics", DeviceCaps.camera(cm, cfg.choice.openId))
+                .put("facing", if (cfg.choice.front) "front" else "back")
                 .put("device", DeviceCaps.device())
             s.hello(hello.toString())
             imu.onSample = { t, k, x, y, z -> s.imu(t, k, x, y, z) }

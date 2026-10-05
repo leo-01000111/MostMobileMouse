@@ -59,6 +59,8 @@ class Recording(root: File, val protocol: Protocol, val location: String, val cf
             .put("storage", if (raw) "frames.y8" else "video.mp4")
             .put("capture", JSONObject()
                 .put("camera_choice", cfg.choice.label).put("camera_id", cfg.choice.openId).put("zoom_ratio", cfg.choice.zoom.toDouble())
+                .put("facing", if (cfg.choice.front) "front" else "back")
+                .put("phone_orientation", if (cfg.choice.front) "face_up" else "face_down")
                 .put("width", cfg.width).put("height", cfg.height).put("requested_fps", cfg.fps)
                 .put("requested_exposure_ns", cfg.exposureNs).put("max_exposure_ns", cfg.maxExposureNs)
                 .put("focus_distance_m", cfg.focusDistanceM.toDouble())

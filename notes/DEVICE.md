@@ -34,7 +34,7 @@
 Notes:
 - Camera 0 is a **logical multi-camera** (physical ids 5, 6, 2). Pin zoom ratio 1.0 (or open the physical wide sensor) so it can't switch lenses mid-recording.
 - The ultra-wide has no OIS and fixed focus, both good for this use; it sees ~2.7× more ceiling area. Main has better resolution per mm. Compare both in A4.
-- Front cameras (ids 1, 3, 4) are irrelevant (they face the desk).
+- Front cameras (ids 1, 3, 4) face the desk in face-down use; for face-up use (notes/DECISIONS.md 2026-10-05) id 1 is the candidate: 3.3 mm, 4.48 × 3.36 mm sensor, AF with manual focus, 60 fps, manual sensor, ISO up to 3200, placeholder intrinsics.
 
 ## IMU
 - STMicro **LSM6DSVTR** accel + gyro, both **max 500 Hz** (min 6.25 Hz), calibrated and uncalibrated variants available.

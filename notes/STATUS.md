@@ -25,3 +25,4 @@
 - 2026-09-28: Recording session ended by user (tired). Still missing for M2: lift, free, dark, lights, raw ruler_x (plus other places later). Phone app free to reinstall now.
 - 2026-09-28: MVP built: phone Mouse mode (TCP stream), PC engine + SendInput runner. Live link 60 fps, 0 skipped.
 - 2026-09-28: Aim-lab game (6 levels) + tuner; bot self-test converges (15° → 0.2°). Live latency ~56 ms camera→PC.
+- 2026-10-05: Recorder: front-camera option for face-up tests (meta.json `capture.facing` / `phone_orientation`); io.py estimates K for cameras with placeholder intrinsics. Face-up layout decided (DECISIONS.md). Face-up takes listed in RECORDINGS_NEEDED §2.6.

@@ -88,6 +88,26 @@ Also write down, once (or put it in `notes/DEVICE.md`):
 
 I'll validate each recording (frame counts, IMU rate, fps, timestamps) and ask for specific retakes if needed.
 
+### 2.6 Face-up set (front camera, roadmap T1.6, ~15 min)
+
+To decide whether the phone can lie **face up**, with the front camera tracking the ceiling. Same desk, same day as a face-down set if possible, so the two compare directly.
+
+- In the recorder, pick the **FRONT id 1** camera chip (front cameras are listed after the rear ones).
+- Phone face up, **top edge (camera end) pointing away from you**.
+- Hold it like the planned layout: **palm on the desk, fingertips on the middle of the screen**, never over the top strip around the camera.
+- The screen is on and touchable while recording. Touches do nothing yet; just don't press the app's own buttons.
+
+| # | Tag | Takes | Length | What to do |
+|---|-----|-------|--------|------------|
+| F1 | `up_still` | 1 | 30 s | Don't touch anything |
+| F2 | `up_ruler_x` | 1 | ~45 s | As `ruler_x`, normal speed |
+| F3 | `up_ruler_y` | 1 | ~45 s | As `ruler_y`, normal speed |
+| F4 | `up_square` | 1 | ~60 s | As `square`, clockwise |
+| F5 | `up_hand` | 1 | ~60 s | As `square`, but in the pauses also press the middle of the screen like clicking (~15 presses) |
+| F6 | `up_dark` | 1 | ~60 s | As `dark`: the front camera gets about 4× less light, so this one matters most |
+
+Type "face up" in the notes field.
+
 ---
 
 ## 3. Possible later recordings (only if M2 says we need them)
