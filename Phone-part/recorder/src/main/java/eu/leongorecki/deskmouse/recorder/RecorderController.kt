@@ -265,6 +265,7 @@ class RecorderController(
             beeper.stop()
             cam.unlockExposure()
             lastSummary = "BT mouse ended: ${m?.processed ?: 0} frames, ${m?.skipped ?: 0} skipped, engine %.1f ms/frame".format(m?.msMean ?: 0.0)
+            Log.i(TAG, "$lastSummary; state ${m?.state?.joinToString()}")
             phase = Phase.Idle
         }
     }
