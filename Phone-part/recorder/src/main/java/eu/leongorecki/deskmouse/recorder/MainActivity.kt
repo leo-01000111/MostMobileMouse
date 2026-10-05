@@ -59,21 +59,37 @@ class MainActivity : ComponentActivity() {
         if (ok) ctl.startLive() else ctl.status = "camera permission denied"
     }
 
+    private var discoverAfterGrant = false
     private val askBt = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { res ->
-        if (res.values.all { it }) startBt() else ctl.btStatus = "Bluetooth permission denied"
+        if (res.values.all { it }) { startBt(); if (discoverAfterGrant) makeDiscoverable() }
+        else ctl.btStatus = "Bluetooth permission denied"
+        discoverAfterGrant = false
     }
 
     private val btPerms = arrayOf(Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_ADVERTISE)
 
     /** Registers the phone as a Bluetooth mouse (asks for permissions the first time). */
     fun startBt() {
-        if (btPerms.any { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }) { askBt.launch(btPerms); return }
+        if (!hasBtPerms()) { askBt.launch(btPerms); return }
         if (ctl.bt == null) ctl.bt = BtMouse(this).also { it.start() }
     }
 
-    /** Lets a computer find the phone for pairing (system dialog, 120 s). */
-    fun makeDiscoverable() {
-        startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120))
+    private fun hasBtPerms() = btPerms.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+
+    /** Registers the mouse, then lets a computer find the phone for pairing (system dialog, 120 s). */
+    fun pairNew() {
+        if (!hasBtPerms()) { discoverAfterGrant = true; askBt.launch(btPerms); return }
+        startBt()
+        makeDiscoverable()
+    }
+
+    private fun makeDiscoverable() {
+        try {
+            startActivity(Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 120))
+            ctl.btStatus = "discoverable for 120 s: on the PC, Add device → Bluetooth → pick this phone"
+        } catch (e: SecurityException) {
+            ctl.btStatus = "can't make the phone discoverable: ${e.message}"
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,6 +107,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         hasCamera = checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         if (hasCamera) ctl.startLive() else askCamera.launch(Manifest.permission.CAMERA)
+        // Keep the mouse registered whenever the app is open, so a computer pairing with the phone sees a mouse.
+        if (hasBtPerms()) startBt()
     }
 
     override fun onPause() {
@@ -172,7 +190,7 @@ private fun Screen(act: MainActivity, c: RecorderController, root: File) {
             Text(c.btStatus, color = Color(0xFF80D8FF), fontSize = 13.sp)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 OutlinedButton({ act.startBt() }) { Text("Enable") }
-                OutlinedButton({ act.startBt(); act.makeDiscoverable() }) { Text("Pair new computer") }
+                OutlinedButton({ act.pairNew() }) { Text("Pair new computer") }
                 OutlinedButton({ c.btTestCircle() }) { Text("Test: draw circles") }
             }
             Button({ c.btMouse() }, enabled = c.phase == Phase.Idle && c.choice != null, modifier = Modifier.fillMaxWidth()) {
@@ -180,7 +198,9 @@ private fun Screen(act: MainActivity, c: RecorderController, root: File) {
             }
             c.bt?.let { b ->
                 if (b.registered) FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    for (d in b.bonded) OutlinedButton({ b.connect(d) }) { Text("Connect ${d.name}") }
+                    val pcs = b.computers
+                    if (pcs.isEmpty()) Text("No paired computer yet: use Pair new computer", color = Color.Gray, fontSize = 12.sp)
+                    for (d in pcs) OutlinedButton({ b.connect(d) }) { Text("Connect ${d.name}") }
                 }
             }
             Text("During a take: Vol-Up / Vol-Down = labels, both together = stop. Screen goes black and ignores touches.",

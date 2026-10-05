@@ -2,6 +2,7 @@ package eu.leongorecki.deskmouse.recorder
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
@@ -33,14 +34,25 @@ class BtMouse(private val ctx: Context) {
     private var buttons = 0
 
     val connected get() = host != null
-    val bonded: List<BluetoothDevice> get() = adapter?.bondedDevices?.toList().orEmpty()
+    @Volatile private var wanted = false  // re-register if Android drops the HID app (e.g. after a failed connect)
+
+    /** Paired computers only: a speaker or watch can't use the phone as a mouse. */
+    val computers: List<BluetoothDevice>
+        get() = adapter?.bondedDevices?.filter { it.bluetoothClass?.majorDeviceClass == BluetoothClass.Device.Major.COMPUTER }.orEmpty()
 
     private fun state(s: String) { Log.i(TAG, s); listener?.onBtState(s) }
 
     private val callback = object : BluetoothHidDevice.Callback() {
         override fun onAppStatusChanged(plugged: BluetoothDevice?, reg: Boolean) {
             registered = reg
-            state(if (reg) "Bluetooth mouse ready${plugged?.let { " (last host ${it.name})" } ?: ""}" else "Bluetooth mouse not registered")
+            if (reg) {
+                state("Bluetooth mouse ready${plugged?.let { " (last host ${it.name})" } ?: ""}")
+            } else if (wanted) {
+                state("Bluetooth mouse dropped by Android, registering again…")
+                exec.execute { Thread.sleep(500); register() }
+            } else {
+                state("Bluetooth mouse off")
+            }
         }
 
         override fun onConnectionStateChanged(device: BluetoothDevice, st: Int) {
@@ -60,21 +72,28 @@ class BtMouse(private val ctx: Context) {
     fun start() {
         val a = adapter ?: return state("no Bluetooth adapter")
         if (!a.isEnabled) return state("Bluetooth is off")
+        wanted = true
         a.getProfileProxy(ctx, object : BluetoothProfile.ServiceListener {
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
-                val h = proxy as BluetoothHidDevice
-                hid = h
-                val sdp = BluetoothHidDeviceAppSdpSettings(
-                    "Desk Mouse", "Phone used as a mouse", "MostMobileMouse", BluetoothHidDevice.SUBCLASS1_MOUSE, DESCRIPTOR,
-                )
-                if (!h.registerApp(sdp, null, null, exec, callback)) state("HID registerApp failed")
+                hid = proxy as BluetoothHidDevice
+                register()
             }
 
             override fun onServiceDisconnected(profile: Int) { hid = null; registered = false; host = null; state("HID service gone") }
         }, BluetoothProfile.HID_DEVICE)
     }
 
+    private fun register() {
+        val h = hid ?: return
+        if (registered) return
+        val sdp = BluetoothHidDeviceAppSdpSettings(
+            "Desk Mouse", "Phone used as a mouse", "MostMobileMouse", BluetoothHidDevice.SUBCLASS1_MOUSE, DESCRIPTOR,
+        )
+        if (!h.registerApp(sdp, null, null, exec, callback)) state("HID registerApp failed")
+    }
+
     fun stop() {
+        wanted = false
         hid?.let { h ->
             host?.let { h.disconnect(it) }
             h.unregisterApp()
