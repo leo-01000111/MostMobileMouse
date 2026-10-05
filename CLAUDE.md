@@ -6,6 +6,7 @@ A Samsung Galaxy phone lying face-down on a desk becomes a mouse: rear camera tr
 - **[DESIGN.md](DESIGN.md)**: the spec. Algorithm, parameters, file formats, milestones. It wins over anything else unless the user says otherwise.
 - **[plans/PLAN.md](plans/PLAN.md)**: order of work, phases, who does what.
 - **[plans/RECORDINGS_NEEDED.md](plans/RECORDINGS_NEEDED.md)**: what the user records and how.
+- **[plans/roadmap/TECH.md](plans/roadmap/TECH.md)**: product roadmap, technical track (private, gitignored; may be missing on other machines). Talk to the marketing track (MARKETING.md) only via its Inbox and the shared gates; keep the Verified numbers table current.
 - **[notes/STATUS.md](notes/STATUS.md)**: current milestone and progress log. Update it when a milestone step finishes.
 
 ## Layout

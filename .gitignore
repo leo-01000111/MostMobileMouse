@@ -32,3 +32,6 @@ PC-part/core/build*/
 *.iml
 .DS_Store
 Thumbs.db
+
+# Product roadmap (private, never commit)
+plans/roadmap/
