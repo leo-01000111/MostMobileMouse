@@ -99,6 +99,20 @@ struct EngineConfig {
     // lift (§6.5)
     double lift_tilt_deg = 4.0;
     double lift_scale_anomaly = 0.015;
+    // velocity Kalman filter (fusion.hpp, notes/DECISIONS.md 2026-10-09); false = the MVP path (still gate, knock hold)
+    bool kf = true;
+    double kf_acc_noise = 0.05;       // velocity random walk from the accelerometer, m/s per sqrt(s)
+    double kf_scale_noise = 0.002;    // log-scale random walk per sqrt(s)
+    bool kf_learn_scale = false;      // camera updates also refine the scale
+    double kf_scale_sigma0 = 0.3;     // log-scale std when the scale comes from the ceiling gauge
+    double kf_scale_sigma_cal = 0.05; // log-scale std after a calibration run
+    double kf_stroke_sigma = 0.15;    // log-scale std of one stroke measurement outside calibration
+    double kf_cam_sigma_px = 0.03;    // camera translation noise per frame, image pixels
+    double kf_cam_sigma_rel = 0.1;    // plus this fraction of the frame's own flow
+    double kf_gate = 4.0;             // reject a camera frame beyond this many sigma
+    int kf_resync_frames = 6;         // after this many rejected frames in a row, trust the camera again
+    double kf_leash_mm = 0.3;         // at rest the cursor only follows once the estimate is this far away
+    bool kf_predict_now = false;      // output the position at the newest IMU sample instead of the frame time
 };
 
 // Sets a parameter by its Python name (engine fields first, then front end fields with an "fe." prefix).

@@ -46,7 +46,9 @@ static FrontEndConfig with_rot_sign(FrontEndConfig f, double s) { f.rot_sign = s
 
 Engine::Engine(const cv::Matx33d& K, const std::array<double, 5>& dist, cv::Size size, const EngineConfig& cfg,
                FrontEndConfig fe_cfg, double gauge_ratio)
-    : cfg_(cfg), fe_(K, dist, size, with_rot_sign(fe_cfg, cfg.rot_sign)), tap_thr_(cfg.tap_thr_min), gauge_ratio0_(gauge_ratio) {
+    : cfg_(cfg), fe_(K, dist, size, with_rot_sign(fe_cfg, cfg.rot_sign)), tap_thr_(cfg.tap_thr_min),
+      kf_(cfg.kf_acc_noise, cfg.kf_scale_noise, cfg.kf_gate, cfg.kf_resync_frames, cfg.kf_learn_scale),
+      gauge_ratio0_(gauge_ratio) {
     const cv::Matx22d M(cfg.M_ci[0], cfg.M_ci[1], cfg.M_ci[2], cfg.M_ci[3]);
     Minv_ = M.inv();
     r_cam_ = cv::Vec2d(cfg.r_cam[0], cfg.r_cam[1]);
@@ -90,6 +92,11 @@ void Engine::on_imu(int64_t t_ns, int kind, double x, double y, double z) {
         lift_update(t_ns);
     } else if (kind == Accel) {
         const Acc s{t_ns, -x, y};  // body X, Y specific force
+        if (c.kf) {
+            cv::Vec2d a(0, 0);
+            if (rest_acc_) a = rot(-Zcum_, cv::Vec2d(s.bx - (*rest_acc_)[0], s.by - (*rest_acc_)[1]));
+            kf_.predict(t_ns, a);
+        }
         push_capped(acc_buf_, s, kAccHistory);
         push_capped(recent_acc_, s, kRecent);
         shock_update(t_ns, s.bx, s.by);
@@ -277,6 +284,10 @@ void Engine::stroke_end(int64_t t_ns) {
         // calibration (new ceiling): the scale is the median of this run's strokes only, the old prior is ignored
         cal_strokes_.push_back(lam_meas);
         lam_ = util::median(cal_strokes_);
+        if (c.kf) kf_.set_scale(*lam_, c.kf_scale_sigma_cal);
+    } else if (c.kf && kf_.has_scale()) {
+        kf_.scale_measurement(lam_meas, c.kf_stroke_sigma);
+        lam_ = kf_.lam();
     } else {
         const double a = stats["scale_updates"] == 0 ? 1.0 : c.scale_alpha;
         lam_ = lam_ ? (1 - a) * *lam_ + a * lam_meas : lam_meas;
@@ -325,6 +336,10 @@ void Engine::on_result(int64_t t, double psi_prev, double psi, double wx, double
     const cv::Vec2d d_rel_body = -(Minv_ * w);
     const cv::Vec2d d_rel_world = rot(psi, d_rel_body);
     if (!still_) stroke_vis_ += d_rel_world;
+    if (c.kf) {
+        kf_frame(t, psi_prev, psi, d_rel_world, rho_med);
+        return;
+    }
     if (!lam_) return;
     const cv::Vec2d lens = *lam_ * d_rel_world;
     // reference point = lens - R(ψ) r_cam
@@ -358,12 +373,66 @@ void Engine::on_result(int64_t t, double psi_prev, double psi, double wx, double
         lead_ = v_ref_ = cv::Vec2d(0, 0);
         return;
     }
+    output(t, ref, dt, speed, psi);
+}
+
+// Reference-point displacement (world, m) -> output frame, pointer acceleration, emit.
+void Engine::output(int64_t t, const cv::Vec2d& ref, double dt, double speed, double psi) {
+    const auto& c = cfg_;
     const cv::Vec2d out = to_output(ref, psi);
     const double s = std::clamp((speed - c.v_lo) / (c.v_hi - c.v_lo), 0.0, 1.0);
     const double gain = 1 + (c.g_max - 1) * s * s * (3 - 2 * s);
     const double k = c.dpi / kInchM * gain;
     const cv::Vec2d counts = out * k;
     emit(t, counts + lead_step(t, counts / dt, psi, k));
+}
+
+// Kalman path (engine.py _kf_frame): the camera corrects the filter; the cursor follows the filter's position.
+void Engine::kf_frame(int64_t t, double psi_prev, double psi, const cv::Vec2d& d_rel_world, double rho_med) {
+    const auto& c = cfg_;
+    const auto t_prev = last_frame_t_;
+    const double dt = t_prev ? std::clamp(double(t - *t_prev) / 1e9, 1.0 / 120, 0.1) : 1.0 / 60;
+    last_frame_t_ = t;
+    if (!lam_) return;
+    if (!kf_.has_scale()) kf_.set_scale(*lam_, c.kf_scale_sigma0);
+    if (t_prev && !lifted_) {
+        const double sig_px = c.kf_cam_sigma_px + c.kf_cam_sigma_rel * last_flow_px_;
+        kf_.camera(*t_prev, t, d_rel_world, sig_px / (fe_.focal() * std::max(rho_med, 1e-6)));
+    }
+    lam_ = kf_.lam();
+    if (!kf_.ready()) return;
+    const int64_t tq = c.kf_predict_now ? *kf_.t() : t;
+    cv::Vec2d p = kf_.position_at(tq);
+    const bool landed = kf_was_lifted_ && !lifted_;
+    kf_was_lifted_ = lifted_;
+    if (landed) {
+        kf_.zero_velocity();
+        p = kf_.position_at(c.kf_predict_now ? *kf_.t() : t);
+    }
+    if (!kf_out_ || lifted_ || landed) {
+        kf_out_ = kf_emitted_ = p;
+        return;
+    }
+    if (scroll_ || (suppress_from_ <= t && t <= suppress_until_)) {
+        kf_out_ = kf_emitted_ = p;  // suppressed motion is dropped, not caught up later
+        return;
+    }
+    if (still_) {
+        const cv::Vec2d d = p - *kf_out_;
+        const double n = cv::norm(d);
+        const double leash = c.kf_leash_mm / 1000;
+        if (n > leash) *kf_out_ += d * (1 - leash / n);
+    } else {
+        kf_out_ = p;
+    }
+    const cv::Vec2d move = *kf_out_ - *kf_emitted_;
+    kf_emitted_ = kf_out_;
+    if (move[0] == 0 && move[1] == 0) return;
+    const cv::Vec2d lever = rot(psi, r_cam_) - rot(psi_prev, r_cam_);
+    const cv::Vec2d ref = still_ ? move : move - lever;
+    const double speed = cv::norm(ref) / dt;
+    last_ref_speed_ = speed;
+    output(t, ref, dt, speed, psi);
 }
 
 cv::Vec2d Engine::to_output(const cv::Vec2d& v_world, double psi) const {

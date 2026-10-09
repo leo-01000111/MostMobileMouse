@@ -7,7 +7,7 @@ project(deskmouse_core CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(deskmouse_core STATIC src/config.cpp src/frontend.cpp src/engine.cpp)
+add_library(deskmouse_core STATIC src/config.cpp src/frontend.cpp src/engine.cpp src/fusion.cpp)
 target_include_directories(deskmouse_core PUBLIC include PRIVATE src)
 target_link_libraries(deskmouse_core PUBLIC ${DESKMOUSE_OPENCV_TARGET})
 

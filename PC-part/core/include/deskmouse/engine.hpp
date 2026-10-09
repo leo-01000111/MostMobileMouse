@@ -10,6 +10,7 @@
 
 #include "deskmouse/config.hpp"
 #include "deskmouse/frontend.hpp"
+#include "deskmouse/fusion.hpp"
 
 namespace deskmouse {
 
@@ -65,6 +66,8 @@ private:
     void lift_update(int64_t t_ns);
     void stroke_end(int64_t t_ns);
     cv::Vec2d to_output(const cv::Vec2d& v_world, double psi) const;
+    void output(int64_t t, const cv::Vec2d& ref, double dt, double speed, double psi);
+    void kf_frame(int64_t t, double psi_prev, double psi, const cv::Vec2d& d_rel_world, double rho_med);
     void emit(int64_t t, const cv::Vec2d& counts);
     cv::Vec2d lead_step(int64_t t, const cv::Vec2d& v_counts, double psi, double k);
 
@@ -101,6 +104,9 @@ private:
     int64_t shock_until_ = -(int64_t(1) << 62);
     bool calibrating_ = false;
     std::vector<double> cal_strokes_;
+    VelocityKF kf_;
+    std::optional<cv::Vec2d> kf_out_, kf_emitted_;  // output position (world, m) and the part already sent
+    bool kf_was_lifted_ = false;
     cv::Vec2d held_{0, 0};  // motion held during a knock window (world frame, m)
     double held_dt_ = 0;
     // scroll
