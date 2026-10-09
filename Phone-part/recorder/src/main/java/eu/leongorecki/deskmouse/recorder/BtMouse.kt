@@ -42,11 +42,19 @@ class BtMouse(private val ctx: Context) {
 
     private fun state(s: String) { Log.i(TAG, s); listener?.onBtState(s) }
 
+    private var lastHost: BluetoothDevice? = null  // reconnect target, like a real mouse waking up
+    private var regTries = 0
+    private var reconnectTries = 0
+
     private val callback = object : BluetoothHidDevice.Callback() {
         override fun onAppStatusChanged(plugged: BluetoothDevice?, reg: Boolean) {
             registered = reg
             if (reg) {
+                regTries = 0
+                if (plugged != null) lastHost = plugged
                 state("Bluetooth mouse ready${plugged?.let { " (last host ${it.name})" } ?: ""}")
+                // Hosts don't reconnect to a HID device by themselves; the device has to.
+                lastHost?.let { d -> if (host == null) exec.execute { Thread.sleep(RECONNECT_DELAY_MS); if (host == null && wanted) dial(d) } }
             } else if (wanted) {
                 state("Bluetooth mouse dropped by Android, registering again…")
                 exec.execute { Thread.sleep(500); register() }
@@ -57,8 +65,16 @@ class BtMouse(private val ctx: Context) {
 
         override fun onConnectionStateChanged(device: BluetoothDevice, st: Int) {
             when (st) {
-                BluetoothProfile.STATE_CONNECTED -> { host = device; state("connected to ${device.name}") }
-                BluetoothProfile.STATE_DISCONNECTED -> { if (host == device) host = null; state("disconnected from ${device.name}") }
+                BluetoothProfile.STATE_CONNECTED -> { host = device; lastHost = device; reconnectTries = 0; state("connected to ${device.name}") }
+                BluetoothProfile.STATE_DISCONNECTED -> {
+                    if (host == device) host = null
+                    state("disconnected from ${device.name}")
+                    // A dropped link (PC busy, radio hiccup): try a few times, then wait for the user.
+                    if (wanted && registered && device == lastHost && reconnectTries < MAX_RECONNECTS) {
+                        reconnectTries++
+                        exec.execute { Thread.sleep(RECONNECT_DELAY_MS * reconnectTries); if (host == null && wanted) dial(device) }
+                    }
+                }
             }
         }
 
@@ -89,7 +105,11 @@ class BtMouse(private val ctx: Context) {
         val sdp = BluetoothHidDeviceAppSdpSettings(
             "Desk Mouse", "Phone used as a mouse", "MostMobileMouse", BluetoothHidDevice.SUBCLASS1_MOUSE, DESCRIPTOR,
         )
-        if (!h.registerApp(sdp, null, null, exec, callback)) state("HID registerApp failed")
+        if (h.registerApp(sdp, null, null, exec, callback)) return
+        if (wanted && ++regTries <= MAX_REG_TRIES) {
+            state("HID registerApp failed, retrying ($regTries/$MAX_REG_TRIES)")
+            exec.execute { Thread.sleep(1000); register() }
+        } else state("HID registerApp failed")
     }
 
     fun stop() {
@@ -104,7 +124,13 @@ class BtMouse(private val ctx: Context) {
 
     /** Connects to an already paired computer (phone-initiated). */
     fun connect(device: BluetoothDevice): Boolean {
+        lastHost = device; reconnectTries = 0
+        return dial(device)
+    }
+
+    private fun dial(device: BluetoothDevice): Boolean {
         val h = hid ?: return false
+        if (!registered) { state("Bluetooth mouse not registered yet"); return false }
         state("connecting to ${device.name}…")
         return h.connect(device)
     }
@@ -145,6 +171,9 @@ class BtMouse(private val ctx: Context) {
     companion object {
         const val REPORT_ID: Byte = 1
         const val REPORT_LEN = 7
+        private const val MAX_REG_TRIES = 10
+        private const val MAX_RECONNECTS = 3
+        private const val RECONNECT_DELAY_MS = 1000L
         val DESCRIPTOR = byteArrayOf(
             0x05, 0x01,                    // Usage Page (Generic Desktop)
             0x09, 0x02,                    // Usage (Mouse)

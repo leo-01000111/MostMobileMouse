@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.hardware.SensorManager
 import android.hardware.camera2.CameraManager
 import android.os.Bundle
@@ -72,7 +73,17 @@ class MainActivity : ComponentActivity() {
     fun startBt() {
         if (!hasBtPerms()) { askBt.launch(btPerms); return }
         if (ctl.bt == null) ctl.bt = BtMouse(this).also { it.start() }
+        // Foreground service: Android drops the mouse registration when the app leaves the screen otherwise.
+        BtService.start(this)
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED && !askedNotif) {
+            askedNotif = true
+            askNotif.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
+
+    // Only so the service's notification shows; the service runs either way.
+    private var askedNotif = false
+    private val askNotif = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     private fun hasBtPerms() = btPerms.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
 
@@ -118,6 +129,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         ctl.bt?.stop()
+        BtService.stop(this)
         ctl.release()
         super.onDestroy()
     }
