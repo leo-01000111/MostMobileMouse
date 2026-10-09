@@ -50,7 +50,7 @@ Engine::Engine(const cv::Matx33d& K, const std::array<double, 5>& dist, cv::Size
     const cv::Matx22d M(cfg.M_ci[0], cfg.M_ci[1], cfg.M_ci[2], cfg.M_ci[3]);
     Minv_ = M.inv();
     r_cam_ = cv::Vec2d(cfg.r_cam[0], cfg.r_cam[1]);
-    stats = {{"frames", 0}, {"taps", 0}, {"scale_updates", 0}, {"lifts", 0}};
+    stats = {{"frames", 0}, {"taps", 0}, {"scale_updates", 0}, {"lifts", 0}, {"shocks", 0}};
 }
 
 // ------------------------------------------------------------------ IMU
@@ -92,6 +92,7 @@ void Engine::on_imu(int64_t t_ns, int kind, double x, double y, double z) {
         const Acc s{t_ns, -x, y};  // body X, Y specific force
         push_capped(acc_buf_, s, kAccHistory);
         push_capped(recent_acc_, s, kRecent);
+        shock_update(t_ns, s.bx, s.by);
         tap_update(t_ns, z);
         still_update(t_ns);
     }
@@ -140,6 +141,18 @@ void Engine::still_update(int64_t t_ns) {
         stroke_start_ = t_ns;
         stroke_vis_ = cv::Vec2d(0, 0);
     }
+}
+
+void Engine::shock_update(int64_t t_ns, double bx, double by) {
+    const auto& c = cfg_;
+    if (last_axy_ && std::hypot(bx - (*last_axy_)[0], by - (*last_axy_)[1]) > c.shock_jerk) {
+        if (double(t_ns) - c.shock_suppress_before_ms * 1e6 > double(shock_until_)) {  // new window, else extend
+            shock_from_ = int64_t(double(t_ns) - c.shock_suppress_before_ms * 1e6);
+            stats["shocks"] += 1;
+        }
+        shock_until_ = int64_t(double(t_ns) + c.shock_suppress_after_ms * 1e6);
+    }
+    last_axy_ = cv::Vec2d(bx, by);
 }
 
 void Engine::tap_update(int64_t t_ns, double az) {
@@ -260,8 +273,14 @@ void Engine::stroke_end(int64_t t_ns) {
     const double cosang = p.dot(vis) / (L * cv::norm(vis));
     if (cosang < kStrokeMinCos) return;
     const double lam_meas = L / cv::norm(vis);
-    const double a = stats["scale_updates"] == 0 ? 1.0 : c.scale_alpha;
-    lam_ = lam_ ? (1 - a) * *lam_ + a * lam_meas : lam_meas;
+    if (calibrating_) {
+        // calibration (new ceiling): the scale is the median of this run's strokes only, the old prior is ignored
+        cal_strokes_.push_back(lam_meas);
+        lam_ = util::median(cal_strokes_);
+    } else {
+        const double a = stats["scale_updates"] == 0 ? 1.0 : c.scale_alpha;
+        lam_ = lam_ ? (1 - a) * *lam_ + a * lam_meas : lam_meas;
+    }
     stats["scale_updates"] += 1;
 }
 
@@ -310,13 +329,31 @@ void Engine::on_result(int64_t t, double psi_prev, double psi, double wx, double
     const cv::Vec2d lens = *lam_ * d_rel_world;
     // reference point = lens - R(ψ) r_cam
     const cv::Vec2d lever = rot(psi, r_cam_) - rot(psi_prev, r_cam_);
-    const cv::Vec2d ref = lens - lever;
-    const double dt = last_frame_t_ ? std::clamp(double(t - *last_frame_t_) / 1e9, 1.0 / 120, 0.1) : 1.0 / 60;
+    cv::Vec2d ref = lens - lever;
+    double dt = last_frame_t_ ? std::clamp(double(t - *last_frame_t_) / 1e9, 1.0 / 120, 0.1) : 1.0 / 60;
     last_frame_t_ = t;
-    const double speed = cv::norm(ref) / dt;
+    double speed = cv::norm(ref) / dt;
     last_ref_speed_ = speed;
     if (scroll_ || (suppress_from_ <= t && t <= suppress_until_)) return;  // lead left untouched while suppressed
-    if (still_ || lifted_) {
+    if (shock_from_ <= t && t <= shock_until_ && !lifted_) {
+        // knock: hold the motion and release the net once the image stops ringing
+        held_ += ref;
+        held_dt_ += dt;
+        return;
+    }
+    bool released = false;
+    if (held_dt_ > 0) {
+        if (!lifted_) {
+            // a stroke that ended in the knock still gets its motion; a still frame adds none
+            ref = still_ ? held_ : ref + held_;
+            dt = still_ ? held_dt_ : dt + held_dt_;
+            speed = cv::norm(ref) / dt;
+            released = true;
+        }
+        held_ = cv::Vec2d(0, 0);
+        held_dt_ = 0;
+    }
+    if ((still_ || lifted_) && !released) {
         emit(t, -lead_);  // give back whatever lead is left, then nothing
         lead_ = v_ref_ = cv::Vec2d(0, 0);
         return;

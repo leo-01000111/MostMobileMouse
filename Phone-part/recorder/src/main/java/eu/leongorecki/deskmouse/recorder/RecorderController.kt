@@ -16,6 +16,13 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private const val TAG = "DeskRec"
 
+// Calibration run at the start of a Bluetooth mouse session (new ceiling): at least CAL_MIN_S and CAL_TARGET_STROKES
+// strokes, at most CAL_MAX_S; fewer than CAL_MIN_STROKES means the scale is not trustworthy.
+private const val CAL_MIN_S = 10.0
+private const val CAL_MAX_S = 20.0
+private const val CAL_TARGET_STROKES = 6
+private const val CAL_MIN_STROKES = 3
+
 enum class Phase { Idle, Countdown, Metering, Recording, Saving, WaitingForPc, Streaming, BtMouse }
 
 /** Owns camera + IMU for the activity's lifetime; drives live monitoring and recordings. */
@@ -50,6 +57,8 @@ class RecorderController(
     var preview by mutableStateOf<Bitmap?>(null)
     var lastSummary by mutableStateOf("")
     var btStatus by mutableStateOf("Bluetooth mouse off")
+    var calibrateFirst by mutableStateOf(true)
+    var calibrating by mutableStateOf(false)
 
     /** Set by the activity once Bluetooth permissions are granted. */
     var bt: BtMouse? = null
@@ -228,6 +237,7 @@ class RecorderController(
         val cfg = config()
         var m: MouseSession? = null
         val dir = root.parentFile ?: root
+        lastSummary = ""
         try {
             if (!cam.isOpenWith(cfg)) cam.open(cfg)
             phase = Phase.Countdown
@@ -246,6 +256,7 @@ class RecorderController(
             mouse = m
             phase = Phase.BtMouse
             beeper.start()
+            if (calibrateFirst) calibrate(m, b)
             val t0 = SystemClock.elapsedRealtime()
             while (!stopRequested && b.connected) {
                 remaining = ((SystemClock.elapsedRealtime() - t0) / 1000).toInt()
@@ -264,10 +275,43 @@ class RecorderController(
             m?.let { MouseSession.saveRatio(dir, it.state[9]); it.stop() }
             beeper.stop()
             cam.unlockExposure()
-            lastSummary = "BT mouse ended: ${m?.processed ?: 0} frames, ${m?.skipped ?: 0} skipped, engine %.1f ms/frame".format(m?.msMean ?: 0.0)
+            calibrating = false
+            lastSummary = (if (lastSummary.startsWith("calibrat")) "$lastSummary; " else "") +
+                "BT mouse ended: ${m?.processed ?: 0} frames, ${m?.skipped ?: 0} skipped, engine %.1f ms/frame, knocks %.0f".format(m?.msMean ?: 0.0, m?.state?.get(12) ?: 0.0)
             Log.i(TAG, "$lastSummary; state ${m?.state?.joinToString()}")
             phase = Phase.Idle
         }
+    }
+
+    /**
+     * Calibration for the current ceiling: the user slides the phone in separate 10–20 cm strokes with short pauses;
+     * each stroke compares camera and accelerometer distance, and the scale becomes their median. The phone lies face
+     * down, so progress is audible: a tick per measured stroke, the start tone when done, the error tone if too few.
+     */
+    private fun calibrate(m: MouseSession, b: BtMouse) {
+        calibrating = true
+        m.beginCalibration()
+        val t0 = SystemClock.elapsedRealtime()
+        var seen = 0
+        while (!stopRequested && b.connected) {
+            val s = m.state
+            val n = if (s[10] == 1.0 && !s[11].isNaN()) s[11].toInt() else 0
+            if (n > seen) { beeper.tick(); seen = n }
+            val el = (SystemClock.elapsedRealtime() - t0) / 1000.0
+            remaining = el.toInt()
+            status = "Calibrating: slide the phone 10–20 cm, pause, repeat · $n strokes"
+            if ((el >= CAL_MIN_S && n >= CAL_TARGET_STROKES) || el >= CAL_MAX_S) break
+            Thread.sleep(100)
+        }
+        val done = CountDownLatch(1)
+        var n = 0
+        m.endCalibration { n = it; done.countDown() }
+        done.await(1, java.util.concurrent.TimeUnit.SECONDS)
+        calibrating = false
+        val ok = n >= CAL_MIN_STROKES
+        if (ok) beeper.start() else beeper.error()
+        lastSummary = if (ok) "calibrated on $n strokes" else "calibration: only $n strokes, speed may be off (use separate strokes with pauses)"
+        Log.i(TAG, "calibration: $n strokes, scale ${m.state[3]}")
     }
 
     /** The phone's IPv4 address on Wi-Fi, shown so the user can pass it to mvp_live.py --host. */

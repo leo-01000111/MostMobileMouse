@@ -32,9 +32,13 @@ class MouseSession(
 
     // stats (read by the UI thread)
     @Volatile var processed = 0; @Volatile var skipped = 0; @Volatile var msMean = 0.0; @Volatile var msMax = 0.0
-    @Volatile var state = DoubleArray(10) { Double.NaN }
+    @Volatile var state = DoubleArray(13) { Double.NaN }
+    private val cmds = ConcurrentLinkedQueue<() -> Unit>()  // engine calls from other threads, run on the engine thread
 
     private val thread = Thread({ loop() }, "engine").apply { priority = Thread.MAX_PRIORITY; start() }
+
+    fun beginCalibration() { cmds.add { engine.beginCalibration(); state = engine.state() } }
+    fun endCalibration(done: (Int) -> Unit) { cmds.add { val n = engine.endCalibration(); state = engine.state(); done(n) } }
 
     fun onImu(t: Long, kind: Int, x: Float, y: Float, z: Float) { imuQ.add(Imu(t, kind.toByte(), x, y, z)) }
 
@@ -67,7 +71,7 @@ class MouseSession(
     }
 
     private fun loop() {
-        var sum = 0.0; var cnt = 0; var mx = 0.0; var tWin = SystemClock.elapsedRealtime()
+        var sum = 0.0; var cnt = 0; var mx = 0.0; var tWin = SystemClock.elapsedRealtime(); var tState = tWin
         while (running) {
             var t: Long; var exp: Long; var skew: Long
             synchronized(lock) {
@@ -76,6 +80,7 @@ class MouseSession(
                 val tmp = work; work = slot; slot = tmp
                 t = slotT; exp = slotExp; skew = slotSkew; slotFull = false
             }
+            while (true) (cmds.poll() ?: break).invoke()
             // IMU that arrived before the frame, in arrival order (as on the PC)
             feedImu()
             val t0 = SystemClock.elapsedRealtimeNanos()
@@ -84,10 +89,9 @@ class MouseSession(
             sum += ms; cnt++; if (ms > mx) mx = ms
             processed++
             send(engine.drain())
-            if (SystemClock.elapsedRealtime() - tWin > 1000) {
-                msMean = sum / cnt; msMax = mx; sum = 0.0; cnt = 0; mx = 0.0; tWin = SystemClock.elapsedRealtime()
-                state = engine.state()
-            }
+            val now = SystemClock.elapsedRealtime()
+            if (now - tWin > 1000) { msMean = sum / cnt; msMax = mx; sum = 0.0; cnt = 0; mx = 0.0; tWin = now }
+            if (now - tState > 200) { state = engine.state(); tState = now }
         }
     }
 

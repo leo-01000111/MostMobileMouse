@@ -38,6 +38,11 @@ public:
                    double rho15, double rho_med);
 
     std::vector<Event> drain();
+    // Calibration run (new ceiling): separate strokes with short pauses; the scale becomes their median.
+    void begin_calibration() { calibrating_ = true; cal_strokes_.clear(); }
+    int end_calibration() { calibrating_ = false; return int(cal_strokes_.size()); }
+    bool calibrating() const { return calibrating_; }
+    int calibration_strokes() const { return int(cal_strokes_.size()); }
     std::optional<double> gauge_ratio() const;
 
     // state for the UI / logs
@@ -54,6 +59,7 @@ public:
 private:
     double psi_at(int64_t t_ns) const;
     void still_update(int64_t t_ns);
+    void shock_update(int64_t t_ns, double bx, double by);
     void tap_update(int64_t t_ns, double az);
     void scroll_update(int64_t t_ns, double wz);
     void lift_update(int64_t t_ns);
@@ -89,6 +95,14 @@ private:
     std::optional<int64_t> pending_tap_t_;
     int64_t suppress_until_ = -(int64_t(1) << 62);
     int64_t suppress_from_ = int64_t(1) << 62;
+    // knocks
+    std::optional<cv::Vec2d> last_axy_;
+    int64_t shock_from_ = int64_t(1) << 62;
+    int64_t shock_until_ = -(int64_t(1) << 62);
+    bool calibrating_ = false;
+    std::vector<double> cal_strokes_;
+    cv::Vec2d held_{0, 0};  // motion held during a knock window (world frame, m)
+    double held_dt_ = 0;
     // scroll
     bool scroll_ = false;
     std::optional<int64_t> scroll_cand_since_, scroll_quiet_since_;

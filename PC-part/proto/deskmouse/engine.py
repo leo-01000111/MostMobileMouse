@@ -64,6 +64,10 @@ class EngineConfig:
     tap_suppress_before_ms: float = 15.0
     tap_suppress_after_ms: float = 120.0
     double_tap_ms: float = 250.0
+    # knocks: a sharp in-plane jolt (hand hitting the phone) makes the image ring for a few frames; mute output
+    shock_jerk: float = 1.0          # |Δ in-plane accel| between consecutive samples (m/s², 500 Hz) that counts as a knock
+    shock_suppress_before_ms: float = 15.0
+    shock_suppress_after_ms: float = 70.0
     # scroll (§6.7)
     scroll_enabled: bool = True   # twist-to-scroll; off = twisting never freezes the cursor
     scroll_omega: float = 0.3
@@ -124,6 +128,11 @@ class Engine:
         self.pending_tap_t = None
         self.suppress_until = -1 << 62
         self.suppress_from = 1 << 62
+        self.last_axy = None
+        self.shock_from = 1 << 62
+        self.shock_until = -1 << 62
+        self.held = np.zeros(2)          # motion held during a knock window (world frame, m)
+        self.held_dt = 0.0
         # scroll
         self.scroll = False
         self.scroll_cand_since = None
@@ -137,6 +146,8 @@ class Engine:
         self.lam = None                    # metres per relative unit
         self.gauge_ratio0 = gauge_ratio
         self.lam_gauge: list = []
+        self.calibrating = False
+        self.cal_strokes: list = []
         self.stroke_vis = np.zeros(2)
         self.stroke_start = None
         self.stroke_peak = 0.0
@@ -144,7 +155,7 @@ class Engine:
         self.carry = np.zeros(2)
         self.last_ref_speed = 0.0
         self.events: list[Event] = []
-        self.stats = dict(frames=0, taps=0, scale_updates=0, lifts=0)
+        self.stats = dict(frames=0, taps=0, scale_updates=0, lifts=0, shocks=0)
         self.frame_log: list | None = None  # set to [] to log front-end results for replay
         self.v_ref = np.zeros(2)   # reference-point velocity (world frame, m/s) for latency compensation
         self.lead = np.zeros(2)    # current lead added to the cursor (m)
@@ -198,6 +209,7 @@ class Engine:
             bx, by = -x, y  # body X, Y specific force
             self.acc_buf.append((t_ns, bx, by))
             self.recent_acc.append((t_ns, bx, by))
+            self._shock_update(t_ns, bx, by)
             self._tap_update(t_ns, z)
             self._still_update(t_ns)
 
@@ -227,6 +239,15 @@ class Engine:
             self.stroke_start = t_ns
             self.stroke_vis[:] = 0
             self.stroke_peak = 0.0
+
+    def _shock_update(self, t_ns, bx, by):
+        c = self.cfg
+        if self.last_axy is not None and np.hypot(bx - self.last_axy[0], by - self.last_axy[1]) > c.shock_jerk:
+            if t_ns - c.shock_suppress_before_ms * 1e6 > self.shock_until:  # new window, else extend the open one
+                self.shock_from = int(t_ns - c.shock_suppress_before_ms * 1e6)
+                self.stats["shocks"] += 1
+            self.shock_until = int(t_ns + c.shock_suppress_after_ms * 1e6)
+        self.last_axy = (bx, by)
 
     def _tap_update(self, t_ns, az):
         c = self.cfg
@@ -345,9 +366,24 @@ class Engine:
         if cosang < 0.9:
             return
         lam_meas = L / np.linalg.norm(vis)
-        a = 1.0 if self.stats["scale_updates"] == 0 else c.scale_alpha
-        self.lam = lam_meas if self.lam is None else (1 - a) * self.lam + a * lam_meas
+        if self.calibrating:
+            # calibration (new ceiling): the scale is the median of this run's strokes only, the old prior is ignored
+            self.cal_strokes.append(lam_meas)
+            self.lam = float(np.median(self.cal_strokes))
+        else:
+            a = 1.0 if self.stats["scale_updates"] == 0 else c.scale_alpha
+            self.lam = lam_meas if self.lam is None else (1 - a) * self.lam + a * lam_meas
         self.stats["scale_updates"] += 1
+
+    def begin_calibration(self):
+        """Start a calibration run: separate strokes with short pauses; each stroke measures the scale."""
+        self.calibrating = True
+        self.cal_strokes = []
+
+    def end_calibration(self) -> int:
+        """End the run; returns the number of strokes it measured (the scale is their median)."""
+        self.calibrating = False
+        return len(self.cal_strokes)
 
     def stroke_start_bound(self, t, t_end, dur):
         return t_end - (dur + 0.06) * 1e9 <= t <= t_end
@@ -410,7 +446,23 @@ class Engine:
         self.last_ref_speed = speed
         if self.scroll or self.suppress_from <= t <= self.suppress_until:
             return  # lead left untouched while output is suppressed
-        if self.still or self.lifted:
+        if self.shock_from <= t <= self.shock_until and not self.lifted:
+            # knock: hold the motion and release the net once the image stops ringing (the ringing cancels, a real
+            # stroke survives, delayed by the window)
+            self.held += ref
+            self.held_dt += dt
+            return
+        released = False
+        if self.held_dt > 0:
+            if not self.lifted:
+                # a stroke that ended in the knock (phone hits a stop) still gets its motion; a still frame adds none
+                ref = self.held.copy() if self.still else ref + self.held
+                dt = self.held_dt if self.still else dt + self.held_dt
+                speed = float(np.linalg.norm(ref) / dt)
+                released = True
+            self.held[:] = 0
+            self.held_dt = 0.0
+        if (self.still or self.lifted) and not released:
             self._emit(t, -self.lead)  # give back whatever lead is left, then nothing
             self.lead[:] = 0
             self.v_ref[:] = 0

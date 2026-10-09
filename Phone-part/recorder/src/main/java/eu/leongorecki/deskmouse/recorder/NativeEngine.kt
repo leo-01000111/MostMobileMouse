@@ -17,8 +17,16 @@ class NativeEngine(K: DoubleArray, dist: DoubleArray, width: Int, height: Int, p
         return List(a.size / 4) { Ev(Kind.entries[a[4 * it]], a[4 * it + 1], a[4 * it + 2], a[4 * it + 3]) }
     }
 
-    /** [still, lifted, scrolling, scale, frames, taps, scale_updates, lifts, inliers, gauge_ratio]; NaN = none. */
+    /**
+     * [still, lifted, scrolling, scale, frames, taps, scale_updates, lifts, inliers, gauge_ratio, calibrating,
+     *  calibration strokes, knocks]; NaN = none.
+     */
     fun state(): DoubleArray = nState(h)
+
+    /** Calibration run for a new ceiling: separate strokes with short pauses; the scale becomes their median. */
+    fun beginCalibration() { nCalibrate(h, true) }
+    /** Ends the run; returns how many strokes it measured. */
+    fun endCalibration(): Int = nCalibrate(h, false)
 
     fun close() { if (h != 0L) { nDestroy(h); h = 0 } }
 
@@ -33,6 +41,7 @@ class NativeEngine(K: DoubleArray, dist: DoubleArray, width: Int, height: Int, p
         @JvmStatic private external fun nFrame(h: Long, y: ByteArray, t: Long, exposure: Long, skew: Long)
         @JvmStatic private external fun nDrain(h: Long): IntArray
         @JvmStatic private external fun nState(h: Long): DoubleArray
+        @JvmStatic private external fun nCalibrate(h: Long, begin: Boolean): Int
 
         /**
          * K (row-major 3×3) and Camera2 distortion at stream width. Same as io.py intrinsics_from: cameras with

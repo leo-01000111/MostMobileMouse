@@ -91,12 +91,23 @@ JNIEXPORT jdoubleArray JNICALL Java_eu_leongorecki_deskmouse_recorder_NativeEngi
     auto* hd = H(p);
     auto& e = *hd->eng;
     const double nan = std::numeric_limits<double>::quiet_NaN();
-    const double s[10] = {double(e.still()), double(e.lifted()), double(e.scrolling()), e.scale().value_or(nan),
+    const double s[13] = {double(e.still()), double(e.lifted()), double(e.scrolling()), e.scale().value_or(nan),
                           double(e.stats["frames"]), double(e.stats["taps"]), double(e.stats["scale_updates"]),
-                          double(e.stats["lifts"]), double(hd->last_inliers), e.gauge_ratio().value_or(nan)};
-    jdoubleArray a = env->NewDoubleArray(10);
-    env->SetDoubleArrayRegion(a, 0, 10, s);
+                          double(e.stats["lifts"]), double(hd->last_inliers), e.gauge_ratio().value_or(nan),
+                          double(e.calibrating()), double(e.calibration_strokes()), double(e.stats["shocks"])};
+    jdoubleArray a = env->NewDoubleArray(13);
+    env->SetDoubleArrayRegion(a, 0, 13, s);
     return a;
+}
+
+// begin = true starts a calibration run; false ends it. Returns the run's stroke count.
+JNIEXPORT jint JNICALL Java_eu_leongorecki_deskmouse_recorder_NativeEngine_nCalibrate(JNIEnv*, jclass, jlong p, jboolean begin) {
+    auto& e = *H(p)->eng;
+    if (begin) {
+        e.begin_calibration();
+        return 0;
+    }
+    return e.end_calibration();
 }
 
 }  // extern "C"

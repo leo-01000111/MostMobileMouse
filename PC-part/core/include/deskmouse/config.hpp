@@ -83,6 +83,10 @@ struct EngineConfig {
     double tap_suppress_before_ms = 15.0;
     double tap_suppress_after_ms = 120.0;
     double double_tap_ms = 250.0;
+    // knocks: a sharp in-plane jolt makes the image ring for a few frames; mute output
+    double shock_jerk = 1.0;  // |Δ in-plane accel| between consecutive samples (m/s², 500 Hz)
+    double shock_suppress_before_ms = 15.0;
+    double shock_suppress_after_ms = 70.0;
     // scroll (§6.7)
     bool scroll_enabled = true;
     double scroll_omega = 0.3;

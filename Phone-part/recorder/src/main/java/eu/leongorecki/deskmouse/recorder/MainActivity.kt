@@ -178,7 +178,7 @@ private fun Screen(act: MainActivity, c: RecorderController, root: File) {
                 for (ch in c.choices) FilterChip(c.choice == ch, { c.choice = ch; c.startLive() }, { Text(ch.label) })
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (s in listOf(640 to 480, 1280 to 960)) FilterChip(c.size == s, { c.size = s; c.startLive() }, { Text("${s.first}×${s.second}") })
+                for (s in listOf(640 to 480, 960 to 720, 1280 to 960)) FilterChip(c.size == s, { c.size = s; c.startLive() }, { Text("${s.first}×${s.second}") })
                 for (f in listOf(60, 30)) FilterChip(c.fps == f, { c.fps = f; c.startLive() }, { Text("$f fps") })
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -205,6 +205,11 @@ private fun Screen(act: MainActivity, c: RecorderController, root: File) {
                 OutlinedButton({ act.pairNew() }) { Text("Pair new computer") }
                 OutlinedButton({ c.btTestCircle() }) { Text("Test: draw circles") }
             }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Switch(c.calibrateFirst, { c.calibrateFirst = it })
+                Text("Calibrate first (new place): 10 s of separate 10–20 cm slides with pauses; a tick per stroke",
+                    color = Color.White, fontSize = 13.sp)
+            }
             Button({ c.btMouse() }, enabled = c.phase == Phase.Idle && c.choice != null, modifier = Modifier.fillMaxWidth()) {
                 Text("Bluetooth mouse (tracking on the phone)")
             }
@@ -229,7 +234,8 @@ private fun Screen(act: MainActivity, c: RecorderController, root: File) {
                 },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("${c.phase} · ${c.remaining}\n${c.protocol.tag}", color = Color(0xFF444444), fontSize = 28.sp)
+                Text(if (c.calibrating) "Calibrating · ${c.remaining} s" else "${c.phase} · ${c.remaining}\n${c.protocol.tag}",
+                    color = Color(0xFF444444), fontSize = 28.sp)
                 if (c.phase == Phase.BtMouse) Text(c.status, color = Color(0xFF333333), fontSize = 11.sp,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
             }
