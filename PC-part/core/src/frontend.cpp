@@ -3,6 +3,7 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/video/tracking.hpp>
 
+#include <algorithm>
 #include <cmath>
 
 #include "util.hpp"
@@ -219,6 +220,8 @@ FrameResult FrontEnd::process(const cv::Mat& y, int64_t t_ns, double dpsi_gyro) 
         n_known += known[i];
     }
     for (size_t i = 0; i < N; ++i) usable[i] = n_known >= kMinKnownTracks ? known[i] : 1;  // bootstrap: all at rho=1
+    // Unknown depths are noisy partial estimates and the fit divides by them (translation came out ~5x too small).
+    if (n_known < kMinKnownTracks) std::fill(rho.begin(), rho.end(), 1.0);
 
     cv::Vec4d x;
     std::vector<char> inl;

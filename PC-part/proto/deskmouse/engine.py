@@ -16,6 +16,7 @@ import numpy as np
 
 from .config import FrontEndConfig
 from .frontend import FrontEnd
+from .fusion import VelocityKF
 
 
 @dataclass
@@ -80,6 +81,20 @@ class EngineConfig:
     # lift (§6.5)
     lift_tilt_deg: float = 4.0
     lift_scale_anomaly: float = 0.015
+    # velocity Kalman filter (fusion.py, notes/DECISIONS.md 2026-10-09); False = the MVP path (still gate, knock hold)
+    kf: bool = True
+    kf_acc_noise: float = 0.05        # velocity random walk from the accelerometer, m/s per sqrt(s)
+    kf_scale_noise: float = 0.002     # log-scale random walk per sqrt(s)
+    kf_learn_scale: bool = False      # camera updates also refine the scale (drifted +30 % on the class session)
+    kf_scale_sigma0: float = 0.3      # log-scale std when the scale comes from the ceiling gauge
+    kf_scale_sigma_cal: float = 0.05  # log-scale std after a calibration run
+    kf_stroke_sigma: float = 0.15     # log-scale std of one stroke measurement outside calibration
+    kf_cam_sigma_px: float = 0.03     # camera translation noise per frame, image pixels
+    kf_cam_sigma_rel: float = 0.1     # plus this fraction of the frame's own flow (motion blur, rolling shutter)
+    kf_gate: float = 4.0              # reject a camera frame beyond this many sigma (knock ringing, mismatches)
+    kf_resync_frames: int = 6         # after this many rejected frames in a row, trust the camera again
+    kf_leash_mm: float = 0.3          # at rest the cursor only follows once the estimate is this far away
+    kf_predict_now: bool = False      # output the position at the newest IMU sample instead of the frame time
 
 
 @dataclass
@@ -146,6 +161,10 @@ class Engine:
         self.lam = None                    # metres per relative unit
         self.gauge_ratio0 = gauge_ratio
         self.lam_gauge: list = []
+        self.kf = VelocityKF(c.kf_acc_noise, c.kf_scale_noise, c.kf_gate, c.kf_resync_frames, c.kf_learn_scale)
+        self.kf_out = None        # output position (world, m): follows the filter, held by the leash at rest
+        self.kf_emitted = None    # output position already sent
+        self.kf_was_lifted = False
         self.calibrating = False
         self.cal_strokes: list = []
         self.stroke_vis = np.zeros(2)
@@ -207,6 +226,14 @@ class Engine:
             self._lift_update(t_ns)
         elif kind == "accel":
             bx, by = -x, y  # body X, Y specific force
+            if c.kf:
+                a = np.zeros(2)
+                if self.rest_acc is not None:
+                    ab = np.array([bx, by]) - self.rest_acc
+                    psi = -self.Zcum
+                    cs, sn = np.cos(psi), np.sin(psi)
+                    a = np.array([cs * ab[0] - sn * ab[1], sn * ab[0] + cs * ab[1]])
+                self.kf.predict(t_ns, a)
             self.acc_buf.append((t_ns, bx, by))
             self.recent_acc.append((t_ns, bx, by))
             self._shock_update(t_ns, bx, by)
@@ -370,6 +397,11 @@ class Engine:
             # calibration (new ceiling): the scale is the median of this run's strokes only, the old prior is ignored
             self.cal_strokes.append(lam_meas)
             self.lam = float(np.median(self.cal_strokes))
+            if c.kf:
+                self.kf.set_scale(self.lam, c.kf_scale_sigma_cal)
+        elif c.kf and self.kf.lam0 is not None:
+            self.kf.scale_measurement(lam_meas, c.kf_stroke_sigma)
+            self.lam = self.kf.lam
         else:
             a = 1.0 if self.stats["scale_updates"] == 0 else c.scale_alpha
             self.lam = lam_meas if self.lam is None else (1 - a) * self.lam + a * lam_meas
@@ -432,6 +464,9 @@ class Engine:
         d_rel_world = np.array([cs * d_rel_body[0] - sn * d_rel_body[1], sn * d_rel_body[0] + cs * d_rel_body[1]])
         if not self.still:
             self.stroke_vis += d_rel_world
+        if c.kf:
+            self._kf_frame(t, psi_prev, psi, d_rel_world, rho_med)
+            return
         if self.lam is None:
             return
         lens = self.lam * d_rel_world
@@ -467,7 +502,12 @@ class Engine:
             self.lead[:] = 0
             self.v_ref[:] = 0
             return
-        # output frame
+        self._output(t, ref, dt, speed, psi)
+
+    def _output(self, t, ref, dt, speed, psi):
+        """Reference-point displacement (world, m) -> output frame, pointer acceleration, emit."""
+        c = self.cfg
+        cs, sn = np.cos(psi), np.sin(psi)
         if c.world_aligned:
             out = ref
         else:
@@ -479,6 +519,58 @@ class Engine:
         k = c.dpi / 0.0254 * gain
         counts = out * k
         self._emit(t, counts + self._lead_step(t, counts / dt, psi, k))
+
+    def _kf_frame(self, t, psi_prev, psi, d_rel_world, rho_med):
+        """Kalman path: the camera corrects the filter; the cursor follows the filter's position."""
+        c = self.cfg
+        kf = self.kf
+        t_prev = self.last_frame_t
+        dt = 1 / 60 if t_prev is None else float(np.clip((t - t_prev) / 1e9, 1 / 120, 0.1))
+        self.last_frame_t = t
+        if self.lam is None:
+            return
+        if kf.lam0 is None:
+            kf.set_scale(self.lam, c.kf_scale_sigma0)
+        if t_prev is not None and not self.lifted:
+            sig_px = c.kf_cam_sigma_px + c.kf_cam_sigma_rel * self.last_flow_px
+            kf.camera(t_prev, t, d_rel_world, sig_px / (self.fe.f * max(rho_med, 1e-6)))
+        self.lam = kf.lam
+        if not kf.ready:
+            return
+        p = kf.position_at(kf.t if c.kf_predict_now else t)
+        landed = self.kf_was_lifted and not self.lifted
+        self.kf_was_lifted = self.lifted
+        if landed:
+            kf.zero_velocity()
+            p = kf.position_at(kf.t if c.kf_predict_now else t)
+        if self.kf_out is None or self.lifted or landed:
+            self.kf_out = p.copy()
+            self.kf_emitted = p.copy()
+            return
+        if self.scroll or self.suppress_from <= t <= self.suppress_until:
+            self.kf_out = p.copy()  # suppressed motion is dropped, not caught up later
+            self.kf_emitted = p.copy()
+            return
+        if self.still:
+            d = p - self.kf_out
+            n = float(np.linalg.norm(d))
+            leash = c.kf_leash_mm / 1000
+            if n > leash:
+                self.kf_out = self.kf_out + d * (1 - leash / n)
+        else:
+            self.kf_out = p.copy()
+        move = self.kf_out - self.kf_emitted
+        self.kf_emitted = self.kf_out.copy()
+        if not move.any():
+            return
+        cs, sn = np.cos(psi), np.sin(psi)
+        c0, s0 = np.cos(psi_prev), np.sin(psi_prev)
+        lever = np.array([cs * self.r_cam[0] - sn * self.r_cam[1], sn * self.r_cam[0] + cs * self.r_cam[1]]) - \
+            np.array([c0 * self.r_cam[0] - s0 * self.r_cam[1], s0 * self.r_cam[0] + c0 * self.r_cam[1]])
+        ref = move if self.still else move - lever
+        speed = float(np.linalg.norm(ref) / dt)
+        self.last_ref_speed = speed
+        self._output(t, ref, dt, speed, psi)
 
     def _to_output(self, v_world, psi):
         """World-frame vector → output frame (body alignment, mount yaw, aspect), metres."""

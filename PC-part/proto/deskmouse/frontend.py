@@ -226,6 +226,10 @@ class FrontEnd:
         rho = np.array([t.rho for t in tracks])
         known = np.array([t.b * self.f**2 >= c.rho_min_motion_px**2 for t in tracks], bool)
         usable = known if known.sum() >= 8 else np.ones(len(tracks), bool)  # bootstrap: all tracks at rho=1
+        if known.sum() < 8:
+            # Unknown depths are noisy partial estimates (median ~5 after small motions on 2026-10-09), and the fit
+            # divides image motion by them: the translation came out ~5x too small. Bootstrap means rho = 1.
+            rho = np.ones(len(tracks))
 
         x, inl = self._fit(rho, n0r, d, usable)
         result = empty
