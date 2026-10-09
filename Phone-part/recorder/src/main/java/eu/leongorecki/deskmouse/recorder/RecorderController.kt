@@ -22,6 +22,9 @@ private const val CAL_MIN_S = 10.0
 private const val CAL_MAX_S = 20.0
 private const val CAL_TARGET_STROKES = 6
 private const val CAL_MIN_STROKES = 3
+// Session recording (camera + IMU while the Bluetooth mouse runs, for replay on the PC): first SESSION_REC_MAX_S only,
+// about 2.5 MB/s at 640×480.
+private const val SESSION_REC_MAX_S = 180
 
 enum class Phase { Idle, Countdown, Metering, Recording, Saving, WaitingForPc, Streaming, BtMouse }
 
@@ -59,6 +62,7 @@ class RecorderController(
     var btStatus by mutableStateOf("Bluetooth mouse off")
     var calibrateFirst by mutableStateOf(true)
     var calibrating by mutableStateOf(false)
+    var recordSession by mutableStateOf(true)
 
     /** Set by the activity once Bluetooth permissions are granted. */
     var bt: BtMouse? = null
@@ -248,6 +252,7 @@ class RecorderController(
             Thread.sleep(1500)
             cam.lockExposure()
             cam.awaitExposureApplied()
+            if (recordSession) startSessionRecording(cfg)
             val (K, dist) = NativeEngine.intrinsics(cam.chars, cfg.width)
             val (params, ratio) = MouseSession.loadParams(dir)
             Log.i(TAG, "bt mouse: ${params.size} tuned params, gauge ratio $ratio, front=${cfg.choice.front}")
@@ -260,6 +265,7 @@ class RecorderController(
             val t0 = SystemClock.elapsedRealtime()
             while (!stopRequested && b.connected) {
                 remaining = ((SystemClock.elapsedRealtime() - t0) / 1000).toInt()
+                rec?.let { r -> if ((SystemClock.elapsedRealtimeNanos() - r.startNs) / 1e9 > SESSION_REC_MAX_S) stopSessionRecording(r) }
                 val s = m.state
                 val mode = when { s[1] == 1.0 -> "lifted"; s[2] == 1.0 -> "scroll"; s[0] == 1.0 -> "still"; else -> "moving" }
                 status = (if (cfg.choice.front) "FRONT camera: engine assumes face down, directions wrong. " else "") + "BT mouse: %d frames, %d skipped, engine %.1f ms (max %.1f), %s, scale %s, calibrations %.0f, taps %.0f, inliers %.0f".format(
@@ -271,6 +277,7 @@ class RecorderController(
             Log.e(TAG, "bt mouse failed", e); beeper.error(); status = "BT mouse error: ${e.message}"
         } finally {
             imu.onSample = null
+            rec?.let { stopSessionRecording(it) }
             mouse = null
             m?.let { MouseSession.saveRatio(dir, it.state[9]); it.stop() }
             beeper.stop()
@@ -290,6 +297,7 @@ class RecorderController(
      */
     private fun calibrate(m: MouseSession, b: BtMouse) {
         calibrating = true
+        rec?.label("cal_begin")
         m.beginCalibration()
         val t0 = SystemClock.elapsedRealtime()
         var seen = 0
@@ -307,11 +315,34 @@ class RecorderController(
         var n = 0
         m.endCalibration { n = it; done.countDown() }
         done.await(1, java.util.concurrent.TimeUnit.SECONDS)
+        rec?.label("cal_end")
         calibrating = false
         val ok = n >= CAL_MIN_STROKES
         if (ok) beeper.start() else beeper.error()
         lastSummary = if (ok) "calibrated on $n strokes" else "calibration: only $n strokes, speed may be off (use separate strokes with pauses)"
         Log.i(TAG, "calibration: $n strokes, scale ${m.state[3]}")
+    }
+
+    /** Records camera + IMU in the normal recording format while the mouse runs (rec_*_btmouse). */
+    private fun startSessionRecording(cfg: CaptureConfig) {
+        val r = Recording(root, Protocol("btmouse", SESSION_REC_MAX_S, "Live Bluetooth mouse session"), location, cfg, false)
+        cam.frameMeta.clear()
+        cam.collectMeta = true
+        imu.stop()
+        imu.start(File(r.dir, "imu.csv"))  // onSample (the engine feed) stays attached
+        r.startNs = SystemClock.elapsedRealtimeNanos()
+        rec = r
+    }
+
+    private fun stopSessionRecording(r: Recording) {
+        rec = null
+        r.endNs = SystemClock.elapsedRealtimeNanos()
+        val latch = CountDownLatch(1); cam.handler.post { latch.countDown() }; latch.await()
+        imu.stop()
+        cam.collectMeta = false
+        r.finish(cam, cm, sm, imu, appVersion, listOf("Bluetooth mouse session; labels cal_begin/cal_end mark calibration"))
+        imu.start(null)
+        Log.i(TAG, "saved session recording ${r.dir.name}: ${r.frameTs.size} frames, ${r.droppedFrames} dropped")
     }
 
     /** The phone's IPv4 address on Wi-Fi, shown so the user can pass it to mvp_live.py --host. */
@@ -391,7 +422,8 @@ class RecorderController(
             live = "camera %.1f fps · gyro %.0f Hz · accel %.0f Hz · features %d · saturated %.1f%%".format(
                 liveFps, imu.rateHz(ImuLogger.Kind.GYRO), imu.rateHz(ImuLogger.Kind.ACCEL), corners, satPct)
         }
-        if (liveFrames % 6 == 0 && analysing.compareAndSet(false, true)) {
+        // Preview analysis only when nobody is tracking: during mouse mode the screen is black and the CPU is the engine's.
+        if (mouse == null && liveFrames % 6 == 0 && analysing.compareAndSet(false, true)) {
             val copy = y.copyOf()
             val w = cam.config.width
             val h = cam.config.height

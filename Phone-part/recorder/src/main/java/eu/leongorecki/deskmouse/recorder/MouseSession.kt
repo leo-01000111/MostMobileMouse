@@ -90,7 +90,10 @@ class MouseSession(
             processed++
             send(engine.drain())
             val now = SystemClock.elapsedRealtime()
-            if (now - tWin > 1000) { msMean = sum / cnt; msMax = mx; sum = 0.0; cnt = 0; mx = 0.0; tWin = now }
+            if (now - tWin > 1000) {
+                msMean = sum / cnt; msMax = mx; sum = 0.0; cnt = 0; mx = 0.0; tWin = now
+                Log.i(TAG, "engine %.1f ms/frame (max %.1f), %d processed, %d skipped".format(msMean, msMax, processed, skipped))
+            }
             if (now - tState > 200) { state = engine.state(); tState = now }
         }
     }

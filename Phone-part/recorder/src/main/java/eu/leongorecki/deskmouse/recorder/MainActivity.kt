@@ -210,6 +210,10 @@ private fun Screen(act: MainActivity, c: RecorderController, root: File) {
                 Text("Calibrate first (new place): 10 s of separate 10–20 cm slides with pauses; a tick per stroke",
                     color = Color.White, fontSize = 13.sp)
             }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Switch(c.recordSession, { c.recordSession = it })
+                Text("Record the session (first 3 min, for replay on the PC)", color = Color.White, fontSize = 13.sp)
+            }
             Button({ c.btMouse() }, enabled = c.phase == Phase.Idle && c.choice != null, modifier = Modifier.fillMaxWidth()) {
                 Text("Bluetooth mouse (tracking on the phone)")
             }

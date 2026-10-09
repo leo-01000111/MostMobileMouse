@@ -1,6 +1,8 @@
 """Run the MVP engine on a recording in arrival order and report cursor path, clicks and scrolls.
 
-usage: python scripts/mvp_replay.py <recording> [--plot] [--latency-ms 45] [--mount-yaw 0]
+usage: python scripts/mvp_replay.py <recording> [--plot] [--latency-ms 45] [--mount-yaw 0] [--tuned]
+
+Labels cal_begin / cal_end (Bluetooth mouse session recordings) start and end a calibration run, as on the phone.
 """
 import argparse
 import heapq
@@ -15,9 +17,11 @@ from deskmouse.engine import Engine, EngineConfig  # noqa: E402
 from deskmouse.io import load  # noqa: E402
 
 
-def run(rec, cfg: EngineConfig, latency_ms: float = 45.0):
+def run(rec, cfg: EngineConfig, latency_ms: float = 45.0, gauge_ratio: float | None = None):
     K, dist = rec.intrinsics()
-    eng = Engine(K, dist, (rec.width, rec.height), cfg)
+    eng = Engine(K, dist, (rec.width, rec.height), cfg, gauge_ratio=gauge_ratio)
+    L = rec.labels
+    cal = sorted((int(t), lab) for t, lab in zip(L.t_ns, L.label) if lab in ("cal_begin", "cal_end")) if len(L) else []
     imu = rec.imu[rec.imu["type"].isin(["gyro", "accel"])].sort_values("t_ns")
     f = rec.frames
     frames = iter(rec.frames_y())
@@ -31,6 +35,8 @@ def run(rec, cfg: EngineConfig, latency_ms: float = 45.0):
             row = f.iloc[k]
             eng.on_frame(img, int(row.t_ns), int(row.exposure_ns or 0), int(row.rolling_shutter_skew_ns or 0))
             k += 1
+        while cal and cal[0][0] <= t:
+            eng.begin_calibration() if cal.pop(0)[1] == "cal_begin" else eng.end_calibration()
         eng.on_imu(int(t), kind, x, y, z)
         eng.poll(int(t))
         events += eng.drain()
@@ -43,10 +49,14 @@ def main():
     ap.add_argument("--plot", action="store_true")
     ap.add_argument("--latency-ms", type=float, default=45.0)
     ap.add_argument("--mount-yaw", type=float, default=0.0)
+    ap.add_argument("--tuned", action="store_true", help="use PC-part/game/phone_params.json like the live mouse")
     a = ap.parse_args()
     rec = load(a.recording)
-    cfg = EngineConfig(mount_yaw_deg=a.mount_yaw)
-    eng, ev = run(rec, cfg, a.latency_ms)
+    tuned = json.loads((Path(__file__).resolve().parents[2] / "game/phone_params.json").read_text()) if a.tuned else {}
+    kw = {k: v for k, v in tuned.items() if k in EngineConfig.__dataclass_fields__}
+    kw.setdefault("mount_yaw_deg", a.mount_yaw)
+    cfg = EngineConfig(**kw)
+    eng, ev = run(rec, cfg, a.latency_ms, tuned.get("gauge_ratio"))
     moves = np.array([(e.t_ns, e.dx, e.dy) for e in ev if e.kind == "move"]) if any(e.kind == "move" for e in ev) else np.zeros((0, 3))
     clicks = [(e.t_ns, e.kind) for e in ev if e.kind in ("left", "right")]
     wheel = sum(e.wheel for e in ev if e.kind == "wheel")
